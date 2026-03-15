@@ -8,8 +8,9 @@ Current stage includes:
 1. Loading CULane dataset  
 2. Parsing `.lines.txt` lane annotations  
 3. Visualizing detected lanes / showing simple LLM indication  
-4. Basic lane classification (left/right based on image center)  
-
+4. Basic lane classification (left/right based on image center)
+5. Lane Structure Analysis (Ego Lane Detection, Lane Geometry Modeling, Road Type Inference, Lane Width Estimation)
+6. Simple Semantic Interpretation
 ---
 
 ### Dataset
