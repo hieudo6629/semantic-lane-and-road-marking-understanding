@@ -1,0 +1,28 @@
+# Cấu hình tập trung cho pipeline Semantic Traffic Scene Understanding.
+# Sửa đường dẫn model tại đây thay vì hardcode rải rác trong code (như bản cũ:
+# src/main.py từng hardcode đường dẫn model .pt ngay trong hàm __main__, và
+# đường dẫn đó thậm chí SAI TÊN FILE so với file thật trong model/).
+
+models:
+  # Model Ultra-Fast-Lane-Detection-v2 (culane_res34) - xem perception/lane_detector.py
+  lane_model_path: "C:/Users/Hieu/IdeaProjects/Semantic Traffic/model/culane_res34.pth"
+  # Thư mục gốc repo Ultra-Fast-Lane-Detection-v2 (chứa thư mục con "model/")
+  ufld_repo_path: "C:/Users/Hieu/IdeaProjects/Semantic Traffic/Ultra-Fast-Lane-Detection-v2"
+  # Model YOLOv8 nhận diện biển báo đã train (xem perception/sign_detector.py)
+  sign_model_path: "../../model/yolov8n_trained_best.pt"
+  device: "cpu"   # "cpu" | "cuda"
+
+sign_detection:
+  confidence_threshold: 0.5
+
+scene:
+  is_urban: true
+
+# Dùng cho chế độ `main.py --culane` (chạy thử trên dataset CULane có sẵn nhãn,
+# không cần chạy qua lane_detector.py - hữu ích để test riêng phần analysis/reasoning)
+datasets:
+  culane_root: "C:/Users/Hieu/.cache/kagglehub/datasets/greatgamedota/culane/versions/7"
+
+logging:
+  level: "INFO"
+  log_file: null   # ví dụ "logs/pipeline.log" để ghi thêm log ra file khi debug

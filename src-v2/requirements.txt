@@ -1,0 +1,9 @@
+# Dependencies cho pipeline src-v2/ (Semantic Traffic Scene Understanding)
+# Phiên bản ghi theo môi trường đã test thành công trong quá trình refactor.
+
+numpy>=1.26,<2.0
+opencv-python>=4.9
+torch>=2.0
+torchvision>=0.15
+ultralytics>=8.4
+PyYAML>=6.0

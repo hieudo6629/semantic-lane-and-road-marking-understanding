@@ -1,0 +1,29 @@
+# requirements.txt
+
+# YOLOv8
+ultralytics>=8.2.0
+
+# OpenCV
+opencv-python>=4.8.0
+
+# Image processing
+numpy>=1.21.0
+pandas>=1.3.0
+
+# Configuration and utility
+pyyaml>=6.0.0
+click>=8.0.0
+python-dotenv>=1.0.0
+
+# Debugging and logging
+loguru>=0.7.0
+
+# For JSON handling
+json5>=0.9.0
+
+# For type checking
+typing-extensions>=4.5.0
+
+# Optional: for development
+jupyter>=1.0.0
+matplotlib>=3.5.0
