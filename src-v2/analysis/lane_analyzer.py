@@ -135,6 +135,12 @@ class LaneCurvature:
     mse_linear: float = float("inf")
     mse_quadratic: float = float("inf")
     drift_ratio: float = 0.0
+    # Mức fit bậc 2 (đường cong) khớp TỐT HƠN fit bậc 1 (đường thẳng) bao
+    # nhiêu %, ví dụ 0.3 = fit bậc 2 giảm 30% sai số so với fit bậc 1. Đây là
+    # tín hiệu TƯƠNG ĐỐI (so sánh 2 fit trên CÙNG dữ liệu của 1 lane), không
+    # phụ thuộc độ lệch tuyệt đối theo pixel như drift_ratio - xem giải thích
+    # trong estimate_curvature().
+    fit_improvement: float = 0.0
     is_straight: bool = True
     confidence: float = 0.3
 
@@ -148,6 +154,7 @@ class AggregatedCurvature:
     confidence: float = 0.0
     vanishing_point_spread: float = 0.0
     avg_drift: float = 0.0
+    avg_fit_improvement: float = 0.0
 
     def to_dict(self) -> Dict:
         return {
@@ -157,6 +164,7 @@ class AggregatedCurvature:
             "confidence": float(self.confidence),
             "vanishing_point_spread": float(self.vanishing_point_spread),
             "avg_drift": float(self.avg_drift),
+            "avg_fit_improvement": float(self.avg_fit_improvement),
         }
 
 
@@ -225,9 +233,35 @@ class LaneAnalyzer:
     4. Ngữ nghĩa của từng làn (ego / lân cận / có đi được không)
     """
 
-    # Ngưỡng phân loại độ cong (đơn vị: độ lệch pixel vanishing-point / 1000, xem aggregate)
-    CURVE_THRESHOLD_GENTLE = 50.0   # vanishing_point_spread (px)
-    CURVE_THRESHOLD_SHARP = 200.0
+    # Ngưỡng phân loại độ cong, dựa trên avg_drift (độ lệch trung bình của
+    # từng lane so với 1 đường thẳng khớp qua chính điểm của nó, đã chuẩn
+    # hóa theo chiều rộng ảnh). Giá trị hiệu chỉnh từ số liệu THỰC ĐO trên
+    # 200 ảnh Tusimple + 199 ảnh CULane (batch_process.py):
+    #   - avg_drift p95 của ảnh "thẳng" trên CẢ 2 dataset: ~0.014
+    #   - avg_drift của 1 ảnh cua GẮT xác nhận đúng bằng mắt: 0.0994
+    # => STRAIGHT đặt trên p95 (có biên độ cho nhiễu), SHARP đặt dưới giá trị
+    # cua gắt xác nhận (để thực sự bắt được), khoảng giữa là "gentle".
+    # KHÔNG dùng vp_spread để phân loại (dù vẫn tính và lưu vào JSON để debug)
+    # vì median vp_spread (pixel thô) của CULane lớn hơn Tusimple ~10 lần dù
+    # cả 2 đều chủ yếu đường thẳng - không so sánh được giữa các ảnh/dataset
+    # khác nhau bằng 1 ngưỡng cố định (xem giải thích chi tiết trong
+    # aggregate_curvature()).
+    DRIFT_THRESHOLD_STRAIGHT = 0.02
+    DRIFT_THRESHOLD_SHARP = 0.06
+
+    # Ngưỡng cho fit_improvement (xem giải thích trong estimate_curvature())
+    # - dùng để bắt các trường hợp cong NHẸ mà avg_drift bỏ sót (độ lệch
+    # tuyệt đối quá nhỏ ở cự ly gần dù hình dạng thực sự là đường cong).
+    # 0.3 nghĩa là fit bậc 2 giảm được >=30% sai số so với fit bậc 1 - cao
+    # hơn hẳn mức cải thiện "giả" thường thấy do overfit nhiễu với 1 bậc tự
+    # do dư ra (thường dưới ~15% với >=10 điểm), nên đủ để phân biệt cong
+    # thật với nhiễu đo đạc.
+    FIT_IMPROVEMENT_THRESHOLD_CURVE = 0.3
+
+    # Mốc "gần chân trời" dùng để ngoại suy vanishing point (tỉ lệ theo
+    # image_height) - dùng CHUNG 1 mốc cho MỌI lane để việc so sánh điểm hội
+    # tụ giữa các lane có ý nghĩa hình học đúng (xem estimate_curvature()).
+    HORIZON_Y_RATIO = 0.3
 
     def __init__(self, vehicle_position_y_ratio: float = 0.95):
         """
@@ -297,7 +331,18 @@ class LaneAnalyzer:
         ]
 
     def _get_x_at_y(self, lane_points: Lane, y_target: int, search_range: int = 30) -> Optional[float]:
-        """Nội suy tọa độ x tại một y cho trước, dùng các điểm gần y_target nhất."""
+        """
+        Nội suy (hoặc ngoại suy) tọa độ x tại một y cho trước.
+
+        SỬA: bản cũ khi không có điểm nào gần y_target (lane kết thúc sớm do
+        bị che khuất, merge/exit...) sẽ trả về None nếu điểm gần nhất cách xa
+        hơn search_range*2. Khi đó _sort_lanes_by_x() gán x_at_reference =
+        +vô cực cho lane này, khiến lane LUÔN bị xếp về TẬN CÙNG BÊN PHẢI bất
+        kể vị trí thực tế -> sai phân loại lane lân cận trái/phải, đặc biệt
+        với topology phức tạp (lane không trải dài hết chiều cao ảnh). Nay
+        ngoại suy bằng đường thẳng khớp qua chính các điểm đã có của lane -
+        ước lượng hợp lý hơn nhiều so với gán thẳng +vô cực.
+        """
         if not lane_points:
             return None
 
@@ -305,9 +350,15 @@ class LaneAnalyzer:
         if nearby:
             return float(np.mean([p[0] for p in nearby]))
 
+        if len(lane_points) >= 2:
+            arr = np.array(lane_points, dtype=np.float64)
+            try:
+                coeffs = np.polyfit(arr[:, 1], arr[:, 0], deg=1)
+                return float(np.polyval(coeffs, y_target))
+            except (np.linalg.LinAlgError, ValueError):
+                pass
+
         closest = min(lane_points, key=lambda p: abs(p[1] - y_target))
-        if abs(closest[1] - y_target) > search_range * 2:
-            return None
         return float(closest[0])
 
     # -- Bước 2: xác định ego lane (cặp vạch kề nhau bao quanh xe) ------
@@ -470,6 +521,7 @@ class LaneAnalyzer:
         y_min, y_max = float(np.min(y_vals)), float(np.max(y_vals))
         y_norm = (y_vals - y_min) / max(y_max - y_min, 1)
 
+        coeffs_linear = None
         try:
             coeffs_linear = np.polyfit(y_norm, x_vals, deg=1)
             mse_linear = float(np.mean((x_vals - np.polyval(coeffs_linear, y_norm)) ** 2))
@@ -479,18 +531,74 @@ class LaneAnalyzer:
         try:
             coeffs_quad = np.polyfit(y_norm, x_vals, deg=2)
             mse_quad = float(np.mean((x_vals - np.polyval(coeffs_quad, y_norm)) ** 2))
-            vp_x = float(coeffs_quad[2])  # x tại y_norm=0 (đỉnh ảnh) xấp xỉ vanishing point
         except (np.linalg.LinAlgError, ValueError):
             mse_quad = float("inf")
+
+        # SỬA: vanishing point được ngoại suy bằng fit TUYẾN TÍNH (không dùng
+        # hệ số bậc 2 như bản cũ) tại 1 MỐC CHUNG "gần chân trời"
+        # (HORIZON_Y_RATIO), thay vì tại y_norm=0 - tức đỉnh của RIÊNG khoảng
+        # dữ liệu lane này.
+        #
+        # Lý do bug cũ: mỗi lane có thể chỉ hiển thị rõ ở 1 đoạn y khác nhau
+        # (do bị che khuất, hoặc đặc thù model), nên "y_norm=0" của lane A và
+        # lane B tương ứng với 2 HÀNG ẢNH THỰC TẾ khác nhau. Dưới phép chiếu
+        # phối cảnh, ngay cả 2 lane THẲNG SONG SONG khi đánh giá ở 2 độ sâu
+        # (y) khác nhau vẫn cho ra 2 giá trị x khác nhau (các đường hội tụ
+        # dần khi tiến về đường chân trời) - so sánh "vanishing point" theo
+        # cách đó thổi phồng SAI vp_spread dù đường thực sự thẳng, khiến
+        # nhiều đường thẳng bị phân loại nhầm thành "gentle_curve".
+        #
+        # Cách sửa: quy đổi mốc "chân trời" (image_height * HORIZON_Y_RATIO -
+        # CÙNG 1 hàng ảnh cho MỌI lane) sang hệ tọa độ y đã chuẩn hóa riêng
+        # của lane này, rồi ngoại suy TẠI ĐÚNG hàng ảnh đó (về mặt toán học,
+        # đường khớp tốt nhất trong không gian (y, x) gốc không đổi dù dùng
+        # thang đo y_norm nào để fit - chỉ cần quy đổi đúng điểm cần đánh giá
+        # sang thang đo tương ứng). Dùng fit bậc 1 (không phải bậc 2) vì phép
+        # chiếu phối cảnh (pinhole camera) luôn biến 1 đường thẳng trong
+        # không gian 3D thành 1 đường THẲNG trên ảnh (collinearity được bảo
+        # toàn) - fit bậc 1 vừa đúng bản chất hình học của 1 lane thẳng, vừa
+        # ít dao động khi ngoại suy hơn fit bậc 2 (có thêm 1 bậc tự do, dễ
+        # "vọt" giá trị khi ngoại suy ra ngoài khoảng điểm quan sát được).
+        if coeffs_linear is not None:
+            horizon_y = image_height * self.HORIZON_Y_RATIO
+            horizon_y_norm = (horizon_y - y_min) / max(y_max - y_min, 1)
+            vp_x = float(np.polyval(coeffs_linear, horizon_y_norm))
+        else:
             vp_x = float(x_vals[0])
 
         drift_ratio = np.sqrt(mse_linear) / max(image_width, 1) if np.isfinite(mse_linear) else 1.0
+
+        # fit_improvement: fit bậc 2 (cho phép cong) khớp TỐT HƠN fit bậc 1
+        # (buộc thẳng) bao nhiêu %, tính TƯƠNG ĐỐI trên CÙNG dữ liệu của lane
+        # này - không phụ thuộc độ lệch tuyệt đối theo pixel như drift_ratio.
+        #
+        # Lý do cần thêm tín hiệu này: đường cong RẤT NHẸ quan sát ở cự ly
+        # gần (near-field, lane chỉ hiện rõ trong 1 đoạn ngắn của ảnh) có thể
+        # cho độ lệch TUYỆT ĐỐI so với đường thẳng rất nhỏ (vài pixel) - dù
+        # mắt người vẫn nhận ra là "hơi cong" - khiến drift_ratio không đủ
+        # nhạy để phân biệt "thẳng" và "cong nhẹ" (dù đã hiệu chỉnh ngưỡng
+        # theo số liệu thực, xem aggregate_curvature()). fit_improvement lại
+        # đo một câu hỏi KHÁC, đúng bản chất hơn: "cho phép mô hình cong có
+        # giúp giải thích hình dạng của lane này tốt hơn hẳn mô hình thẳng
+        # không?" - nếu có, đó là bằng chứng thống kê cho việc lane THỰC SỰ
+        # cong, bất kể độ lệch tuyệt đối lớn hay nhỏ.
+        #
+        # Chỉ tin tín hiệu này khi mse_linear đủ lớn (> 4, tức RMS > 2px) và
+        # lane có đủ điểm (>= 10) - nếu không, chênh lệch mse_linear/mse_quad
+        # chỉ phản ánh nhiễu đo đạc hoặc hiện tượng overfit (fit bậc 2 có
+        # thêm 1 bậc tự do, với quá ít điểm sẽ luôn "khớp hoàn hảo" một cách
+        # giả tạo), không phản ánh độ cong thật.
+        if np.isfinite(mse_linear) and np.isfinite(mse_quad) and mse_linear > 4 and len(points) >= 10:
+            fit_improvement = max(0.0, (mse_linear - mse_quad) / mse_linear)
+        else:
+            fit_improvement = 0.0
 
         return LaneCurvature(
             vanishing_point_x=vp_x,
             mse_linear=mse_linear,
             mse_quadratic=mse_quad,
             drift_ratio=float(drift_ratio),
+            fit_improvement=float(fit_improvement),
             is_straight=mse_linear < 1000,
             confidence=0.7 if mse_linear < 1000 else 0.5,
         )
@@ -505,35 +613,93 @@ class LaneAnalyzer:
         """
         Gộp độ cong của nhiều làn thành một kết luận chung cho cả đường.
 
-        Đường thẳng thật sự thì vanishing point của các làn phải GẦN NHAU
-        (spread thấp) và drift trung bình thấp. Nếu spread lớn, các làn
-        đang "chỉ" về các hướng khác nhau -> đường cong.
+        Chỉ dùng avg_drift (độ lệch trung bình của TỪNG lane so với 1 đường
+        thẳng khớp qua chính các điểm của lane đó, đã chuẩn hóa theo chiều
+        rộng ảnh) làm tín hiệu phân loại - xem lý do KHÔNG dùng vp_spread ở
+        comment bên dưới, dựa trên số liệu thực đo được từ 2 dataset khác nhau.
         """
         if not lane_curvatures:
             return AggregatedCurvature()
 
         vps = [c.vanishing_point_x for c in lane_curvatures if c.vanishing_point_x is not None]
         drift_ratios = [c.drift_ratio for c in lane_curvatures]
+        fit_improvements = [c.fit_improvement for c in lane_curvatures]
         straight_count = sum(1 for c in lane_curvatures if c.is_straight)
 
         vp_spread = (max(vps) - min(vps)) if len(vps) >= 2 else 0.0
         avg_drift = float(np.mean(drift_ratios)) if drift_ratios else 0.0
+        avg_fit_improvement = float(np.mean(fit_improvements)) if fit_improvements else 0.0
         straight_ratio = straight_count / len(lane_curvatures)
 
         direction = self._estimate_direction(lanes, image_width, image_height) if lanes else "straight"
 
-        if vp_spread < 50 and avg_drift < 0.1 and straight_ratio > 0.5:
+        # SỬA LẦN 2 - HIỆU CHỈNH LẠI NGƯỠNG BẰNG SỐ LIỆU THỰC TẾ: sau khi chạy
+        # batch_process.py trên 200 ảnh Tusimple + 199 ảnh CULane và thống kê
+        # phân phối thật của avg_drift/vp_spread, phát hiện 2 vấn đề:
+        #
+        # (1) Ngưỡng DRIFT_THRESHOLD_STRAIGHT=0.1 (đặt ở lần sửa trước) quá
+        # LỎNG so với dữ liệu thật: p95 của avg_drift trên CẢ 2 dataset chỉ
+        # ~0.014, và ngay cả 1 ảnh cua GẮT xác nhận đúng bằng mắt cũng chỉ đạt
+        # avg_drift=0.0994 - vẫn < 0.1! Vì vậy điều kiện "straight" hầu như
+        # LUÔN thỏa mãn (199/200 ảnh Tusimple, phần lớn CULane), khiến nhánh
+        # "gentle"/"sharp" gần như không bao giờ được chọn - đây chính là bug
+        # "Road curvature luôn là straight" mà bạn báo cáo.
+        #
+        # (2) vp_spread (tính bằng PIXEL THÔ) không so sánh được giữa các
+        # ảnh/dataset khác nhau: median vp_spread của CULane (~1322px) lớn
+        # hơn Tusimple (~142px) tới ~10 LẦN dù cả 2 đều chủ yếu là đường
+        # thẳng - có thể do đặc thù camera/độ phân giải/độ dài đoạn lane phát
+        # hiện được khác nhau giữa 2 dataset. Nếu chỉ đơn giản hạ
+        # DRIFT_THRESHOLD_STRAIGHT mà vẫn giữ "OR vp_spread > 200" như bản
+        # trước, mọi ảnh CULane sẽ bị đẩy thẳng sang "sharp" (bỏ qua
+        # "gentle") do vp_spread luôn vượt 200 - lặp lại đúng vấn đề gốc theo
+        # chiều ngược lại. Ngược lại avg_drift (đã chuẩn hóa theo chiều rộng
+        # ảnh) có phân phối RẤT NHẤT QUÁN giữa 2 dataset (p95 chỉ chênh
+        # 0.0136 so với 0.0143) - đáng tin cậy hơn hẳn để so sánh xuyên
+        # dataset/độ phân giải.
+        #
+        # Cách sửa: HIỆU CHỈNH LẠI ngưỡng avg_drift theo đúng phân phối thực
+        # đo được (STRAIGHT ở trên p95 quan sát được, SHARP ở dưới giá trị
+        # cua gắt xác nhận 0.0994 để thực sự bắt được), và BỎ vp_spread khỏi
+        # điều kiện phân loại (chỉ còn giữ lại trong JSON để debug/tham khảo -
+        # xem trường vanishing_point_spread) vì đã chứng minh bằng số liệu là
+        # không đáng tin cậy để so sánh chéo giữa các ảnh/dataset khác nhau.
+        #
+        # SỬA LẦN 3 - BỔ SUNG TÍN HIỆU fit_improvement: sau khi hiệu chỉnh lại
+        # ngưỡng avg_drift ở lần sửa trước, một số ảnh có đường cong THẬT
+        # nhưng RẤT NHẸ (xác nhận bằng mắt qua ảnh visualize, ví dụ
+        # 026_14.jpg, 034_19.jpg) vẫn bị báo "straight". Nguyên nhân: đây là
+        # các lane chỉ hiện rõ ở cự ly gần (near-field), độ lệch TUYỆT ĐỐI so
+        # với đường thẳng vẫn rất nhỏ (avg_drift ~0.003-0.009) dù hình dạng
+        # thực sự đã cong - avg_drift (đo độ lệch tuyệt đối theo pixel) không
+        # đủ nhạy để bắt được loại cong nhẹ-nhưng-thật này, dù ngưỡng đã hiệu
+        # chỉnh đúng theo số liệu.
+        #
+        # avg_fit_improvement (xem estimate_curvature()) đo một câu hỏi KHÁC
+        # và nhạy hơn với đúng trường hợp này: "mô hình cong bậc 2 có giải
+        # thích hình dạng lane tốt hơn HẲN mô hình thẳng không?" - đây là
+        # phép so sánh TƯƠNG ĐỐI trên cùng dữ liệu, không bị giới hạn bởi độ
+        # lệch tuyệt đối nhỏ như avg_drift. Dùng tín hiệu này để NÂNG từ
+        # "straight" lên "gentle" khi avg_drift quá nhỏ để tự phát hiện,
+        # nhưng fit_improvement cho thấy bằng chứng cong rõ ràng.
+        if (
+            avg_drift < self.DRIFT_THRESHOLD_STRAIGHT
+            and avg_fit_improvement < self.FIT_IMPROVEMENT_THRESHOLD_CURVE
+            and straight_ratio > 0.5
+        ):
             classification = "straight"
             confidence = min(0.9, 0.6 + straight_ratio * 0.3)
-            magnitude = vp_spread / 1000
-        elif vp_spread > 200 or avg_drift > 0.3:
+        elif avg_drift >= self.DRIFT_THRESHOLD_SHARP:
             classification = f"sharp_{direction}_curve" if direction != "straight" else "sharp_curve"
             confidence = 0.7
-            magnitude = (vp_spread + avg_drift * 1000) / 100
         else:
             classification = f"gentle_{direction}_curve" if direction != "straight" else "gentle_curve"
             confidence = 0.6
-            magnitude = (vp_spread + avg_drift * 500) / 500
+
+        # magnitude luôn = avg_drift (không trộn thêm vp_spread như bản
+        # trước) - để số liệu report ra JSON nhất quán với chính ngưỡng đã
+        # dùng để phân loại, không bị lệch theo dataset giống vp_spread.
+        magnitude = avg_drift
 
         return AggregatedCurvature(
             curvature_magnitude=float(magnitude),
@@ -542,6 +708,7 @@ class LaneAnalyzer:
             confidence=float(confidence),
             vanishing_point_spread=float(vp_spread),
             avg_drift=float(avg_drift),
+            avg_fit_improvement=float(avg_fit_improvement),
         )
 
     def _estimate_direction(self, lanes: List[Lane], image_width: int, image_height: int) -> str:

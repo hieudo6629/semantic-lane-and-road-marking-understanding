@@ -51,6 +51,8 @@ def build_pipeline_config(raw: dict) -> PipelineConfig:
         device=models.get("device", "cpu"),
         is_urban=raw.get("scene", {}).get("is_urban", True),
         sign_confidence_threshold=raw.get("sign_detection", {}).get("confidence_threshold", 0.5),
+        lane_dataset=models.get("lane_dataset", "culane"),
+        lane_backbone=str(models.get("lane_backbone", "34")),
     )
 
 

@@ -1,7 +1,7 @@
 """
-Wrapper cho model Ultra-Fast-Lane-Detection-v2 (culane_res34), chuyển output
-thô của model thành danh sách làn dạng [(x, y), ...] mà toàn bộ pipeline
-phía sau (analysis/lane_analyzer.py, ...) sử dụng.
+Wrapper cho model Ultra-Fast-Lane-Detection-v2, chuyển output thô của model
+thành danh sách làn dạng [(x, y), ...] mà toàn bộ pipeline phía sau
+(analysis/lane_analyzer.py, ...) sử dụng.
 
 Đây là file MỚI HOÀN TOÀN - trước đây repo này CHƯA CÓ wrapper thật nào gọi
 Ultra-Fast-Lane-Detection-v2; `src/main.py --live` chỉ đọc lane có sẵn từ
@@ -20,11 +20,44 @@ CẢI TIẾN so với demo.py gốc: demo.py hardcode kích thước ảnh gốc
 nhưng SẼ SAI nếu dùng ảnh dashcam kích thước khác (ví dụ 1920x1080 như dự
 án này hướng tới). Wrapper này dùng ĐÚNG kích thước ảnh gốc thật sự truyền
 vào detect(), không hardcode.
+
+HỖ TRỢ NHIỀU BIẾN THỂ (dataset x backbone): CULane/Tusimple đều dùng CHUNG
+kiến trúc `model/model_culane.py:parsingNet` (đã xác nhận bằng cách đọc
+Ultra-Fast-Lane-Detection-v2/model/model_tusimple.py - file đó chỉ import
+lại đúng class parsingNet của model_culane.py), chỉ khác nhau ở vài tham số
+cấu hình (số hàng/cột anchor, kích thước train, crop_ratio, fc_norm, công
+thức row_anchor). Vì vậy chỉ cần tham số hóa các con số này (bảng
+_DATASET_PRESETS bên dưới, chép trực tiếp từ file cấu hình gốc
+Ultra-Fast-Lane-Detection-v2/configs/{dataset}_res{backbone}.py) là dùng
+được cho cả 2 dataset x 2 backbone (18/34) = 4 tổ hợp, KHÔNG cần sửa logic
+decode.
+
+CHƯA HỖ TRỢ CurveLanes: dataset này dùng một KIẾN TRÚC MẠNG KHÁC HẲN
+(model/model_curvelanes.py - có thêm nhánh cls_distribute/lane_token, tách
+riêng cls_row/cls_col, không có forward_tta) và một thuật toán hậu xử lý
+phức tạp hơn nhiều để gộp dự đoán row+col cho từng lane
+(evaluation/eval_wrapper.py: generate_lines_local_curve_combine,
+generate_lines_col_local_curve_combine, revise_lines_curve_combine) - việc
+port đúng phần này nằm ngoài phạm vi thay đổi nhỏ gọn hiện tại, để lại cho
+một tác vụ riêng nếu cần.
+
+LƯU Ý QUAN TRỌNG: KHÔNG dùng cơ chế `Config.fromfile()` của chính
+Ultra-Fast-Lane-Detection-v2 (utils/config.py) để tự động đọc các file cấu
+hình .py gốc, dù cách đó tránh được rủi ro chép nhầm số. Lý do: repo đó có
+package tên "utils" TRÙNG TÊN với package utils/ của chính dự án này. Một
+khi package utils/ của DỰ ÁN đã được import (ví dụ dòng `from utils.logger
+import get_logger` ngay bên dưới), Python cache sẵn "utils" trong
+sys.modules - mọi `import utils.xxx` sau đó (kể cả sau khi đã thêm đường
+dẫn Ultra-Fast-Lane-Detection-v2 vào sys.path) đều bị resolve NHẦM sang
+package utils/ của dự án này chứ không phải của UFLD-v2, gây lỗi
+ModuleNotFoundError khó hiểu. Vì vậy bảng cấu hình dưới đây được chép trực
+tiếp (giá trị ổn định, ít khi đổi vì đây là cấu hình tái tạo kết quả bài
+báo gốc), không phụ thuộc code nào của UFLD-v2 ngoài chính kiến trúc model.
 """
 
 import os
 import sys
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -37,60 +70,113 @@ logger = get_logger(__name__)
 Point = Tuple[float, float]
 Lane = List[Point]
 
+SUPPORTED_BACKBONES = ("18", "34")
+
+# Chép trực tiếp từ Ultra-Fast-Lane-Detection-v2/configs/{dataset}_res18.py
+# và {dataset}_res34.py - 2 backbone của CÙNG 1 dataset dùng chung các số
+# này (backbone chỉ đổi phần trích xuất đặc trưng ResNet, không đổi số
+# lượng anchor/kích thước train), nên chỉ cần bảng theo dataset.
+#
+# row_anchor_start/end: mốc đầu/cuối của dải hàng anchor (row anchor),
+# TÍNH THEO TỈ LỆ chiều cao ảnh gốc dataset đó lúc train (0.0 = đỉnh ảnh,
+# 1.0 = đáy ảnh). Với Tusimple, file gốc định nghĩa bằng pixel tuyệt đối
+# (np.linspace(160, 710, num_row) / 720) - về mặt toán học, chia mỗi điểm
+# của 1 dải linspace cho cùng 1 hằng số tương đương linspace 2 đầu mút đã
+# chia trước, nên 160/720 và 710/720 cho đúng kết quả tương tự.
+_DATASET_PRESETS: Dict[str, Dict] = {
+    "culane": dict(
+        num_row=72, num_col=81, train_width=1600, train_height=320,
+        num_cell_row=200, num_cell_col=100, crop_ratio=0.6,
+        use_aux=False, fc_norm=True, num_lanes=4,
+        row_anchor_start=0.42, row_anchor_end=1.0,
+    ),
+    "tusimple": dict(
+        num_row=56, num_col=41, train_width=800, train_height=320,
+        num_cell_row=100, num_cell_col=100, crop_ratio=0.8,
+        use_aux=False, fc_norm=False, num_lanes=4,
+        row_anchor_start=160 / 720, row_anchor_end=710 / 720,
+    ),
+}
+
 
 class LaneDetector:
     """
-    Wrapper cho model culane_res34.pth (kiến trúc parsingNet của
-    Ultra-Fast-Lane-Detection-v2). Các hằng số bên dưới KHỚP với
-    Ultra-Fast-Lane-Detection-v2/configs/culane_res34.py - đây là cấu hình
-    dùng để TRAIN model, phải giữ nguyên khi inference, không được đổi.
+    Wrapper cho model Ultra-Fast-Lane-Detection-v2 (kiến trúc parsingNet),
+    hỗ trợ 2 dataset (CULane, Tusimple) x 2 backbone (resnet18, resnet34).
+    Xem _DATASET_PRESETS ở đầu file để biết các tham số cấu hình cụ thể.
     """
 
-    TRAIN_WIDTH = 1600
-    TRAIN_HEIGHT = 320
-    CROP_RATIO = 0.6
-    BACKBONE = "34"
-    NUM_ROW = 72
-    NUM_COL = 81
-    NUM_CELL_ROW = 200
-    NUM_CELL_COL = 100
-    NUM_LANES = 4
-    USE_AUX = False
-    FC_NORM = True
-
-    # CULane có 4 làn (index 0-3). Model dự đoán 2 làn giữa (1, 2) theo kiểu
-    # "row anchor" (quét theo hàng ngang, trả về x tại từng y cố định) - phù
-    # hợp với làn gần thẳng đứng ở giữa ảnh. 2 làn ngoài (0, 3) dự đoán theo
-    # kiểu "col anchor" (quét theo cột dọc, trả về y tại từng x cố định) -
-    # phù hợp hơn với làn nghiêng mạnh gần rìa ảnh, nơi 1 giá trị x có thể
-    # ứng với nhiều y nên không thể biểu diễn tốt theo kiểu row anchor.
+    # CULane/Tusimple đều có 4 làn (index 0-3). Model dự đoán 2 làn giữa
+    # (1, 2) theo kiểu "row anchor" (quét theo hàng ngang, trả về x tại
+    # từng y cố định) - phù hợp với làn gần thẳng đứng ở giữa ảnh. 2 làn
+    # ngoài (0, 3) dự đoán theo kiểu "col anchor" (quét theo cột dọc, trả
+    # về y tại từng x cố định) - phù hợp hơn với làn nghiêng mạnh gần rìa
+    # ảnh, nơi 1 giá trị x có thể ứng với nhiều y nên không thể biểu diễn
+    # tốt theo kiểu row anchor. Quy ước này giống hệt nhau cho cả CULane và
+    # Tusimple (xác nhận từ chính pred2coords() trong demo.py gốc - dùng
+    # chung 1 hàm, hardcode row_lane_idx=[1,2]/col_lane_idx=[0,3] cho cả 2
+    # dataset), nên không cần đưa vào _DATASET_PRESETS.
     ROW_LANE_INDICES = (1, 2)
     COL_LANE_INDICES = (0, 3)
 
-    def __init__(self, model_path: str, ufld_repo_path: str, device: str = "cpu"):
+    def __init__(
+        self,
+        model_path: str,
+        ufld_repo_path: str,
+        dataset: str = "culane",
+        backbone: str = "34",
+        device: str = "cpu",
+    ):
         """
         Args:
-            model_path: đường dẫn tới file culane_res34.pth đã train.
+            model_path: đường dẫn tới file .pth đã train (ví dụ culane_res34.pth,
+                        tusimple_res18.pth) - PHẢI khớp với đúng dataset/backbone
+                        khai báo bên dưới, nếu không state_dict sẽ load sai/lệch shape.
             ufld_repo_path: đường dẫn tới thư mục gốc repo Ultra-Fast-Lane-Detection-v2
                              (chứa thư mục con `model/`) - cần thêm vào sys.path để
                              import được kiến trúc parsingNet gốc, tránh copy code model.
+            dataset: "culane" hoặc "tusimple" (chưa hỗ trợ "curvelanes" - xem docstring đầu file).
+            backbone: "18" hoặc "34".
             device: "cpu" | "cuda".
         """
+        dataset = dataset.lower()
+        if dataset not in _DATASET_PRESETS:
+            raise ValueError(
+                f"dataset='{dataset}' chưa được hỗ trợ. Hiện chỉ hỗ trợ: {list(_DATASET_PRESETS)} "
+                "(CurveLanes cần kiến trúc model + thuật toán decode khác hẳn, xem docstring đầu file)."
+            )
+        if backbone not in SUPPORTED_BACKBONES:
+            raise ValueError(f"backbone='{backbone}' không hợp lệ, phải là một trong {SUPPORTED_BACKBONES}")
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Không tìm thấy model làn đường tại: {model_path}")
         if not os.path.isdir(ufld_repo_path):
             raise FileNotFoundError(f"Không tìm thấy thư mục Ultra-Fast-Lane-Detection-v2 tại: {ufld_repo_path}")
 
+        preset = _DATASET_PRESETS[dataset]
+        self.dataset = dataset
+        self.backbone = backbone
+        self.TRAIN_WIDTH = preset["train_width"]
+        self.TRAIN_HEIGHT = preset["train_height"]
+        self.CROP_RATIO = preset["crop_ratio"]
+        self.NUM_ROW = preset["num_row"]
+        self.NUM_COL = preset["num_col"]
+        self.NUM_CELL_ROW = preset["num_cell_row"]
+        self.NUM_CELL_COL = preset["num_cell_col"]
+        self.NUM_LANES = preset["num_lanes"]
+        self.USE_AUX = preset["use_aux"]
+        self.FC_NORM = preset["fc_norm"]
+
         self._add_ufld_repo_to_path(ufld_repo_path)
 
         # Import trễ (sau khi đã chỉnh sys.path) - lấy đúng kiến trúc model gốc
-        # của Ultra-Fast-Lane-Detection-v2, không định nghĩa lại.
+        # của Ultra-Fast-Lane-Detection-v2, không định nghĩa lại. CULane và
+        # Tusimple dùng chung class này (xem docstring đầu file).
         from model.model_culane import parsingNet  # type: ignore
 
-        logger.info(f"Đang khởi tạo parsingNet (backbone resnet{self.BACKBONE})...")
+        logger.info(f"Đang khởi tạo parsingNet (dataset={dataset}, backbone=resnet{backbone})...")
         self.net = parsingNet(
             pretrained=False,  # Không tải backbone ImageNet - state_dict bên dưới sẽ ghi đè toàn bộ, tải làm gì cho tốn thời gian/cần mạng
-            backbone=self.BACKBONE,
+            backbone=self.backbone,
             num_grid_row=self.NUM_CELL_ROW,
             num_cls_row=self.NUM_ROW,
             num_grid_col=self.NUM_CELL_COL,
@@ -115,7 +201,7 @@ class LaneDetector:
         self.net.to(device)
         self.device = device
 
-        self.row_anchor = np.linspace(0.42, 1, self.NUM_ROW)
+        self.row_anchor = np.linspace(preset["row_anchor_start"], preset["row_anchor_end"], self.NUM_ROW)
         self.col_anchor = np.linspace(0, 1, self.NUM_COL)
 
         logger.info("LaneDetector sẵn sàng.")

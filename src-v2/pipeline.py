@@ -40,6 +40,10 @@ class PipelineConfig:
     device: str = "cpu"
     is_urban: bool = True
     sign_confidence_threshold: float = 0.5
+    # Biến thể Ultra-Fast-Lane-Detection-v2 - xem _DATASET_PRESETS trong
+    # perception/lane_detector.py để biết giá trị hợp lệ ("culane"/"tusimple" x "18"/"34").
+    lane_dataset: str = "culane"
+    lane_backbone: str = "34"
 
 
 class TrafficScenePipeline:
@@ -52,6 +56,8 @@ class TrafficScenePipeline:
         self.lane_detector = LaneDetector(
             model_path=config.lane_model_path,
             ufld_repo_path=config.ufld_repo_path,
+            dataset=config.lane_dataset,
+            backbone=config.lane_backbone,
             device=config.device,
         )
         self.sign_detector = SignDetector(

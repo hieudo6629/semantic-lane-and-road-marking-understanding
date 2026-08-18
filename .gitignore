@@ -1,2 +1,8 @@
 src-v2/input
 src-v2/output
+src-v2/output-*
+src-v2/evaluation_results
+src-v2/*.xlsx
+src-v2/*.docx
+src-v2/bao_cao_luan_van.md
+src-v2/claude.md

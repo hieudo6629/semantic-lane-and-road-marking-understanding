@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 
 # Load model
 # model_path = 'model/yolov8n_trained_best.pt'  # Đường dẫn đến file .pt của bạn
-model_path = 'model/vntsd_yolov8n_trained_best.pt'
+model_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\model\vntsdb46_best.pt'
 model = YOLO(model_path)
 
 # Đường dẫn ảnh input
-image_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\image_test\1000.png'  # Đường dẫn đến ảnh cần detect
+image_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\image_test\10017.png'  # Đường dẫn đến ảnh cần detect
 
 # Chạy detection
 results = model(image_path)
@@ -31,4 +31,4 @@ for r in results:
             xyxy = box.xyxy[0].tolist()  # Tọa độ [x1, y1, x2, y2]
             conf = box.conf[0].item()     # Confidence score
             cls = box.cls[0].item()       # Class ID
-            print(f"Class: {int(cls)}, Confidence: {conf:.2f}, Box: {xyxy}")
+            print(f"Class: {int(cls)}, Confidence: {conf:.05f}, Box: {xyxy}")
