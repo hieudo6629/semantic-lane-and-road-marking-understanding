@@ -1,0 +1,21 @@
+{
+  "lane_count": 0,
+  "ego_lane": {
+    "position": "unknown",
+    "confidence": 0.0
+  },
+  "vehicle_offset": {
+    "direction": "unknown",
+    "magnitude": "unknown",
+    "offset_percent": null
+  },
+  "neighbor_lanes": {
+    "left_count": 0,
+    "right_count": 0
+  },
+  "road_shape": {
+    "type": "unknown",
+    "severity": "unknown",
+    "direction": null
+  }
+}

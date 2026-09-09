@@ -1,0 +1,83 @@
+{
+  "scene_id": "c3470edf-f1a3-444c-ac0d-8ac862267c90",
+  "timestamp": "2026-08-28T01:12:17.172859",
+  "image_size": {
+    "width": 1280,
+    "height": 720
+  },
+  "road": {
+    "road_type": "straight",
+    "road_environment": "narrow_road",
+    "curvature_magnitude": 0.000879443887177799,
+    "curvature_direction": "straight",
+    "curvature_confidence": 0.8999999999999999,
+    "geometry": {
+      "spread_pixels": 0.0,
+      "coverage_ratio": 0.0,
+      "convergence_ratio": 0.0,
+      "lane_count": 0,
+      "geometry_type": "narrow"
+    }
+  },
+  "lane": {
+    "sorted_lanes": [
+      {
+        "original_index": 0,
+        "sorted_index": 0,
+        "x_at_reference": 303.16742553710935,
+        "point_count": 40
+      }
+    ],
+    "ego_lane": {
+      "left_boundary_index": null,
+      "right_boundary_index": 0,
+      "left_boundary_sorted": null,
+      "right_boundary_sorted": 0,
+      "ego_lane_center_x": 303.16742553710935,
+      "lane_width": 0.0,
+      "confidence": 0.5,
+      "reason": "only_one_lane_visible"
+    },
+    "lane_classification": {
+      "left_neighbor_indices": [],
+      "right_neighbor_indices": [],
+      "left_neighbor_count": 0,
+      "right_neighbor_count": 0
+    },
+    "vehicle_offset": {
+      "offset_pixels": 336.83257446289065,
+      "offset_ratio_percent": 0.0,
+      "direction": "right_of_lane_center",
+      "vehicle_x": 640.0,
+      "lane_center_x": 303.16742553710935,
+      "lane_width": null,
+      "distance_to_left_boundary": null,
+      "distance_to_right_boundary": null,
+      "is_vehicle_between_boundaries": false
+    },
+    "curvature": {
+      "curvature_magnitude": 0.000879443887177799,
+      "direction": "straight",
+      "classification": "straight",
+      "confidence": 0.8999999999999999,
+      "vanishing_point_spread": 0.0,
+      "avg_drift": 0.000879443887177799,
+      "avg_fit_improvement": 0.0
+    },
+    "lane_semantics": [
+      {
+        "lane_index": 0,
+        "lane_type": "unknown",
+        "is_ego_lane": true,
+        "is_drivable": true,
+        "lateral_position": "unknown"
+      }
+    ],
+    "image_width": 1280,
+    "image_height": 720
+  },
+  "traffic_signs": {
+    "detected": [],
+    "count": 0
+  }
+}

@@ -1,0 +1,5 @@
+Situation: The ego vehicle is at a red traffic light on a multi-lane road with tall buildings on both sides. The road markings indicate a crosswalk ahead.
+
+Recommendation: The driving action is to stop at the red traffic light.
+
+Safety note: There is no specific safety concern identified in this situation; however, it is important to follow traffic rules and wait for the traffic light to turn green before proceeding.

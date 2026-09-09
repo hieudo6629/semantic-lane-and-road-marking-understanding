@@ -1,0 +1,21 @@
+{
+  "lane_count": 2,
+  "ego_lane": {
+    "position": "1/2",
+    "confidence": 0.95
+  },
+  "vehicle_offset": {
+    "direction": "left",
+    "magnitude": "none",
+    "offset_percent": 5.0
+  },
+  "neighbor_lanes": {
+    "left_count": 0,
+    "right_count": 1
+  },
+  "road_shape": {
+    "type": "straight",
+    "severity": "none",
+    "direction": null
+  }
+}

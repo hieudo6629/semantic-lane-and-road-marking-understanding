@@ -1,0 +1,111 @@
+{
+  "scene_id": "0e9d5dcc-623a-48ad-86ef-ddbf3dc93f58",
+  "timestamp": "2026-08-28T01:12:39.421683",
+  "image_size": {
+    "width": 1280,
+    "height": 720
+  },
+  "road": {
+    "road_type": "straight",
+    "road_environment": "urban_multi_lane",
+    "curvature_magnitude": 0.0020398847124183093,
+    "curvature_direction": "straight",
+    "curvature_confidence": 0.8999999999999999,
+    "geometry": {
+      "spread_pixels": 615.9302347819009,
+      "coverage_ratio": 0.4811954959233601,
+      "convergence_ratio": 0.0,
+      "lane_count": 2,
+      "geometry_type": "single_lane_view"
+    }
+  },
+  "lane": {
+    "sorted_lanes": [
+      {
+        "original_index": 0,
+        "sorted_index": 0,
+        "x_at_reference": 247.80841827392578,
+        "point_count": 47
+      },
+      {
+        "original_index": 1,
+        "sorted_index": 1,
+        "x_at_reference": 871.0067993164063,
+        "point_count": 47
+      },
+      {
+        "original_index": 2,
+        "sorted_index": 2,
+        "x_at_reference": 1455.868647279584,
+        "point_count": 33
+      }
+    ],
+    "ego_lane": {
+      "left_boundary_index": 0,
+      "right_boundary_index": 1,
+      "left_boundary_sorted": 0,
+      "right_boundary_sorted": 1,
+      "ego_lane_center_x": 559.407608795166,
+      "lane_width": 623.1983810424805,
+      "confidence": 0.95,
+      "reason": "best_adjacent_pair"
+    },
+    "lane_classification": {
+      "left_neighbor_indices": [],
+      "right_neighbor_indices": [
+        2
+      ],
+      "left_neighbor_count": 0,
+      "right_neighbor_count": 1
+    },
+    "vehicle_offset": {
+      "offset_pixels": 80.59239120483403,
+      "offset_ratio_percent": 12.932060425128164,
+      "direction": "right_of_lane_center",
+      "vehicle_x": 640.0,
+      "lane_center_x": 559.407608795166,
+      "lane_width": 623.1983810424805,
+      "distance_to_left_boundary": 392.1915817260742,
+      "distance_to_right_boundary": 231.00679931640627,
+      "is_vehicle_between_boundaries": true
+    },
+    "curvature": {
+      "curvature_magnitude": 0.0020398847124183093,
+      "direction": "straight",
+      "classification": "straight",
+      "confidence": 0.8999999999999999,
+      "vanishing_point_spread": 827.5707774387587,
+      "avg_drift": 0.0020398847124183093,
+      "avg_fit_improvement": 0.05854069786993651
+    },
+    "lane_semantics": [
+      {
+        "lane_index": 0,
+        "lane_type": "ego",
+        "is_ego_lane": true,
+        "is_drivable": true,
+        "lateral_position": "middle"
+      },
+      {
+        "lane_index": 1,
+        "lane_type": "ego",
+        "is_ego_lane": true,
+        "is_drivable": true,
+        "lateral_position": "middle"
+      },
+      {
+        "lane_index": 2,
+        "lane_type": "shoulder",
+        "is_ego_lane": false,
+        "is_drivable": false,
+        "lateral_position": "edge_right"
+      }
+    ],
+    "image_width": 1280,
+    "image_height": 720
+  },
+  "traffic_signs": {
+    "detected": [],
+    "count": 0
+  }
+}

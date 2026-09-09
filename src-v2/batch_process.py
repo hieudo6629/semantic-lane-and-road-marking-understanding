@@ -7,8 +7,14 @@ Cách dùng:
     python batch_process.py --input in/ --output out/ --speed 60 --limit 50
 
 Với mỗi ảnh "ten_anh.jpg" trong thư mục input, script tạo ra trong thư mục output:
-    - ten_anh.json   : TrafficScene đầy đủ (dạng JSON, xem analysis/scene_builder.py)
-    - ten_anh_vis.jpg: ảnh gốc có vẽ overlay lane/corridor/sign
+    - ten_anh.json       : TrafficScene đầy đủ (dạng JSON thô, xem analysis/scene_builder.py) -
+                           KHÔNG gồm "traffic_situation"/"recommendation" (đã bỏ, xem
+                           process_one_image() - tập trung vào làn đường, không dùng
+                           tới suy luận biển báo/khuyến nghị đơn giản if-else)
+    - ten_anh_brief.json : bản RÚT GỌN từ JSON thô, chỉ giữ thông tin chính về
+                           làn đường (số làn, vị trí ego lane, độ lệch tâm, số
+                           làn trái/phải, hình dạng đường) - xem analysis/scene_summarizer.py
+    - ten_anh_vis.jpg    : ảnh gốc có vẽ overlay lane/corridor/sign
 
 Ảnh lỗi (không đọc được, hoặc pipeline lỗi giữa chừng) sẽ được LOG lại và
 BỎ QUA, không làm dừng cả batch - kết quả tổng hợp in ra cuối cùng và lưu
@@ -23,6 +29,7 @@ from typing import List
 
 import cv2
 
+from analysis.scene_summarizer import summarize_scene
 from main import build_pipeline_config, load_raw_config
 from pipeline import TrafficScenePipeline
 from utils.logger import get_logger, setup_logging
@@ -57,10 +64,22 @@ def process_one_image(pipeline: TrafficScenePipeline, image_path: str, output_di
 
     base_name = os.path.splitext(os.path.basename(image_path))[0]
     json_path = os.path.join(output_dir, f"{base_name}.json")
+    brief_path = os.path.join(output_dir, f"{base_name}_brief.json")
     vis_path = os.path.join(output_dir, f"{base_name}_vis.jpg")
 
+    scene_dict = scene.to_dict()
+    # Bỏ traffic_situation/recommendation khỏi JSON lưu ra - phạm vi hiện tại
+    # chỉ tập trung vào làn đường, không dùng tới suy luận biển báo/khuyến
+    # nghị đơn giản if-else (xem reasoning/recommendation.py) - 2 trường này
+    # vẫn được TrafficScenePipeline tính (không sửa scene_builder.py, giữ
+    # nguyên cho các nơi gọi khác như main.py), chỉ không ghi ra file ở đây.
+    scene_dict.pop("traffic_situation", None)
+    scene_dict.pop("recommendation", None)
+
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(scene.to_dict(), f, indent=2, ensure_ascii=False)
+        json.dump(scene_dict, f, indent=2, ensure_ascii=False)
+    with open(brief_path, "w", encoding="utf-8") as f:
+        json.dump(summarize_scene(scene_dict), f, indent=2, ensure_ascii=False)
     cv2.imwrite(vis_path, vis)
 
     return {
@@ -68,7 +87,6 @@ def process_one_image(pipeline: TrafficScenePipeline, image_path: str, output_di
         "lane_count": len(scene.lane.sorted_lanes),
         "road_type": scene.road.road_type,
         "signs_detected": len(scene.detected_signs),
-        "recommendation": scene.recommendation.action if scene.recommendation else None,
         "elapsed_seconds": round(elapsed, 3),
     }
 
@@ -97,7 +115,7 @@ def run_batch(pipeline: TrafficScenePipeline, input_dir: str, output_dir: str, s
             logger.info(
                 f"[{i}/{len(image_paths)}] OK  {stats['image']}: "
                 f"{stats['lane_count']} lanes, road={stats['road_type']}, "
-                f"signs={stats['signs_detected']}, action={stats['recommendation']} "
+                f"signs={stats['signs_detected']} "
                 f"({stats['elapsed_seconds']}s)"
             )
         except Exception as exc:  # noqa: BLE001 - lỗi 1 ảnh không được làm dừng cả batch

@@ -25,6 +25,7 @@ cần thiết: model thật có 2 class riêng "Green Light" / "Red Light", tứ
 màu đèn đã được chính model nhận diện, không cần suy đoán mặc định nữa.
 """
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -37,6 +38,21 @@ from utils.preprocessing import validate_image
 
 logger = get_logger(__name__)
 
+# configs/traffic_sign_mapping.json: mã TT100K -> {"name": tên tiếng Anh dễ
+# đọc, "type": loại biển}. Dùng mã CHI TIẾT hơn model thật trả về (ví dụ
+# mapping có "pm20"/"pm30"/"pm40"/"pm55" nhưng model chỉ có class "pm" trống,
+# không phân biệt số cụ thể) - vì vậy tra cứu CHỈ khớp được 1 phần, phần
+# không khớp giữ nguyên mã gốc làm display_name (xem _load_sign_mapping()).
+_MAPPING_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "configs", "traffic_sign_mapping.json")
+
+
+def _load_sign_mapping() -> Dict[str, Dict]:
+    if not os.path.exists(_MAPPING_PATH):
+        logger.warning(f"Không tìm thấy {_MAPPING_PATH} - display_name sẽ giữ nguyên mã gốc.")
+        return {}
+    with open(_MAPPING_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
 
 @dataclass
 class DetectedSign:
@@ -47,6 +63,7 @@ class DetectedSign:
     relative_position: str               # "left" | "center" | "right"
     distance: str                        # "near" | "medium" | "far"
     raw_class_name: str                  # Tên gốc lấy thẳng từ model.names, chưa chuẩn hóa
+    display_name: str = ""               # Tên tiếng Anh dễ đọc tra từ traffic_sign_mapping.json, fallback = raw_class_name nếu không khớp được mã
 
     def to_dict(self) -> Dict:
         return {
@@ -56,6 +73,7 @@ class DetectedSign:
             "relative_position": self.relative_position,
             "distance": self.distance,
             "raw_class_name": self.raw_class_name,
+            "display_name": self.display_name,
         }
 
 
@@ -139,6 +157,14 @@ class SignDetector:
         self.class_names: Dict[int, str] = dict(self.model.names)
         logger.info(f"Model có {len(self.class_names)} lớp: {list(self.class_names.values())}")
 
+        self.sign_mapping = _load_sign_mapping()
+        unmapped = [n for n in self.class_names.values() if n not in self.sign_mapping]
+        if unmapped:
+            logger.warning(
+                f"{len(unmapped)}/{len(self.class_names)} lớp không có trong traffic_sign_mapping.json "
+                f"(display_name sẽ giữ nguyên mã gốc): {unmapped}"
+            )
+
     def detect(
         self,
         image_bgr: np.ndarray,
@@ -185,6 +211,8 @@ class SignDetector:
                 cls_id = int(box.cls[0])
                 raw_class_name = self.class_names.get(cls_id, f"unknown_class_{cls_id}")
                 sign_type = normalize_sign_type(raw_class_name)
+                mapping_entry = self.sign_mapping.get(raw_class_name)
+                display_name = mapping_entry["name"] if mapping_entry else raw_class_name
 
                 detected_signs.append(
                     DetectedSign(
@@ -194,6 +222,7 @@ class SignDetector:
                         relative_position=self._relative_position(x1, x2, width),
                         distance=self._estimate_distance(y1, y2, x1, x2, height),
                         raw_class_name=raw_class_name,
+                        display_name=display_name,
                     )
                 )
 

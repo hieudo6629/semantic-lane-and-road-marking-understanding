@@ -55,7 +55,7 @@ logger = get_logger(__name__)
 # "nvidia_nim/" (tiền tố đó chỉ dùng khi route qua 1 gateway kiểu LiteLLM,
 # gọi thẳng NVIDIA thì dùng đúng model id của họ).
 DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
-DEFAULT_MODEL = "nvidia/llama-3.1-nemotron-nano-vl-8b-v1"
+DEFAULT_MODEL = "nvidia/ising-calibration-1.5-31b"
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
 
@@ -64,184 +64,161 @@ IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
 # chạy). Vẫn có thể ghi đè tạm thời bằng --prompt/--prompt-file nếu chỉ
 # muốn thử nhanh 1 prompt khác mà không sửa file.
 DEFAULT_PROMPTS = {
-    "image_only": """
-    You are a traffic scene understanding and driving recommendation assistant.
-    Your task is to understand the current traffic situation from the information provided and give a safe, objective, evidence-based driving recommendation.
-    Follow these rules strictly:
-    1. EVIDENCE
-    - Use ONLY information supported by the provided input.
-    - Do not invent or assume objects, vehicles, lanes, road markings, traffic signs, traffic signals, speed limits, road conditions, hazards, or traffic rules.
-    - If important information is unclear, missing, or ambiguous, explicitly state the uncertainty rather than guessing.
-    - Never estimate or infer a speed limit when it is not explicitly provided.
-    2. TRAFFIC UNDERSTANDING
-    Before making a recommendation, consider the following information when available:
-    - Road environment and road geometry
-    - Ego vehicle position and ego lane
-    - Left and right lane boundaries
-    - Neighboring lanes
-    - Vehicle position relative to the ego lane center
-    - Relevant surrounding vehicles and potential conflicts
-    - Traffic signs and traffic signals
-    - Applicable speed limits or traffic rules explicitly provided
-    - Potential hazards and uncertainties
-    These are internal considerations. Do not list them unless they are relevant to the final decision.
-    3. DECISION MAKING
-    - Base the recommendation on the actual traffic situation, not on generic driving advice.
-    - Prioritize safety.
-    - Do not recommend a lane change unless there is a clear reason supported by the evidence.
-    - Do not recommend overtaking unless clearly justified by the available evidence.
-    - Do not recommend acceleration or braking unless supported by the traffic situation.
-    - If maintaining the current lane and speed is the safest reasonable action, say so explicitly.
-    - When uncertainty could affect the driving decision, choose the safer reasonable action and briefly state the uncertainty.
-    4. HALLUCINATION CONTROL
-    - Never fill missing information with assumptions.
-    - Do not treat an absence of detected information as proof that the object does not exist unless the input explicitly supports that conclusion.
-    - Do not create traffic rules, speed limits, hazards, or road events that are not supported by the input.
-    5. RESPONSE
-    - Be concise, practical, and specific.
-    - Keep the entire response under 120 words.
-    - Focus only on information relevant to the current driving decision.
-    - Do not repeat the same information across sections.
-    - Do not enumerate hypothetical actions or situations that are not relevant to the current scene.
-    - Do not mention the input format, model, prompt, or perception pipeline.
-    - Do not describe your reasoning process.
-    Respond using exactly this structure:
-    ### Situation Assessment
-    Maximum 2 sentences.
-    ### Driving Recommendation
-    Maximum 2 sentences.
-    ### Safety Considerations
-    - Maximum 3 bullet points.
-    - Include only safety considerations relevant to the current scene.
-    - Avoid generic advice.
-    Use the provided traffic scene image as the only source of information.
-    Base your assessment on visually observable evidence in the image.
-    Do not infer details that cannot reasonably be determined from the image.
-    """,
+    "common":"""
+You are a lane-level traffic understanding and driving decision-support assistant.
 
+Your task is to understand the current lane configuration and use it to provide a safe, objective, concise, and evidence-based driving recommendation.
+
+Focus primarily on four lane-level semantics:
+
+1. Lane count
+   - Number of relevant drivable lanes visible or represented.
+
+2. Ego lane
+   - Which lane the ego vehicle is currently occupying.
+   - Its position relative to the visible lane boundaries.
+
+3. Vehicle offset
+   - Whether the ego vehicle is near the lane center or close to a lane boundary.
+   - When measurable, assess the offset relative to lane width.
+
+4. Neighbor lanes
+   - Number and position of neighboring lanes to the left and right of the ego lane.
+   - Consider their relevance to the ego vehicle's current position and potential lane changes.
+
+EVIDENCE RULES:
+- Use ONLY information supported by the available evidence.
+- Do not invent lanes, lane boundaries, vehicles, or road structure.
+- Do not assume that a missing or undetected lane does not exist.
+- Do not assume traffic rules or lane-speed behavior unless supported by the evidence.
+- If important lane information is uncertain or contradictory, state the uncertainty.
+
+DECISION RULES:
+- Base the recommendation primarily on lane configuration, ego position, offset, and neighboring lanes.
+- Maintaining the current lane is preferred when there is no evidence requiring a lane change.
+- Do not recommend changing lanes merely because a neighboring lane exists.
+- Consider lane position and offset when assessing whether the ego vehicle is safely positioned within its lane.
+- A large lateral offset or proximity to a lane boundary should be treated as a potential safety concern when supported by the evidence.
+- Only recommend a lane change when there is a clear evidence-based reason.
+- Do not assume that the left lane is faster or the right lane is slower unless this is supported by the available evidence.
+
+The recommendation should explain how the lane-level situation supports the proposed action.
+
+Do not describe information that is irrelevant to the driving decision.
+Do not describe your reasoning process.
+
+""",
+    "image_only": """
+Use the provided traffic scene image as the ONLY source of information.
+
+Visually determine, when reliably possible:
+
+- Number of visible drivable lanes
+- Ego lane
+- Lane boundaries
+- Ego vehicle position within the lane
+- Relative lateral offset from the lane center
+- Neighboring lanes to the left and right
+
+Use visual evidence to determine whether the ego vehicle is centered or close to a lane boundary.
+
+Do not infer lane information that cannot reasonably be determined from the image.
+If lane-level information is uncertain, acknowledge the uncertainty.
+   """,
     "json_only": """
-    You are a traffic scene understanding and driving recommendation assistant.
-    Your task is to understand the current traffic situation from the information provided and give a safe, objective, evidence-based driving recommendation.
-    Follow these rules strictly:
-    1. EVIDENCE
-    - Use ONLY information supported by the provided input.
-    - Do not invent or assume objects, vehicles, lanes, road markings, traffic signs, traffic signals, speed limits, road conditions, hazards, or traffic rules.
-    - If important information is unclear, missing, or ambiguous, explicitly state the uncertainty rather than guessing.
-    - Never estimate or infer a speed limit when it is not explicitly provided.
-    2. TRAFFIC UNDERSTANDING
-    Before making a recommendation, consider the following information when available:
-    - Road environment and road geometry
-    - Ego vehicle position and ego lane
-    - Left and right lane boundaries
-    - Neighboring lanes
-    - Vehicle position relative to the ego lane center
-    - Relevant surrounding vehicles and potential conflicts
-    - Traffic signs and traffic signals
-    - Applicable speed limits or traffic rules explicitly provided
-    - Potential hazards and uncertainties
-    These are internal considerations. Do not list them unless they are relevant to the final decision.
-    3. DECISION MAKING
-    - Base the recommendation on the actual traffic situation, not on generic driving advice.
-    - Prioritize safety.
-    - Do not recommend a lane change unless there is a clear reason supported by the evidence.
-    - Do not recommend overtaking unless clearly justified by the available evidence.
-    - Do not recommend acceleration or braking unless supported by the traffic situation.
-    - If maintaining the current lane and speed is the safest reasonable action, say so explicitly.
-    - When uncertainty could affect the driving decision, choose the safer reasonable action and briefly state the uncertainty.
-    4. HALLUCINATION CONTROL
-    - Never fill missing information with assumptions.
-    - Do not treat an absence of detected information as proof that the object does not exist unless the input explicitly supports that conclusion.
-    - Do not create traffic rules, speed limits, hazards, or road events that are not supported by the input.
-    5. RESPONSE
-    - Be concise, practical, and specific.
-    - Keep the entire response under 120 words.
-    - Focus only on information relevant to the current driving decision.
-    - Do not repeat the same information across sections.
-    - Do not enumerate hypothetical actions or situations that are not relevant to the current scene.
-    - Do not mention the input format, model, prompt, or perception pipeline.
-    - Do not describe your reasoning process.
-    Respond using exactly this structure:
-    ### Situation Assessment
-    Maximum 2 sentences.
-    ### Driving Recommendation
-    Maximum 2 sentences.
-    ### Safety Considerations
-    - Maximum 3 bullet points.
-    - Include only safety considerations relevant to the current scene.
-    - Avoid generic advice.
-    Use the provided semantic scene JSON as the only source of information.
-    The JSON was generated automatically by an upstream perception system.
-    Use only information explicitly represented in the JSON.
-    Do not infer visual information that is not represented in the JSON.
-    Treat the semantic JSON as automatically generated perception data, not as unquestionable ground truth.
-    If the JSON is incomplete, ambiguous, or internally inconsistent, acknowledge the limitation rather than inventing missing information.
-    Do not describe every field in the JSON. Use only information relevant to the current driving decision.
+Use the provided semantic scene JSON as the ONLY source of information.
+
+The JSON contains structured information extracted from the traffic scene.
+
+Use all relevant information explicitly represented in the JSON, especially:
+- Road geometry and road structure
+- Lane configuration and lane boundaries
+- Ego lane and ego-vehicle position
+- Vehicle offset
+- Neighboring lanes
+- Traffic signs and signals
+- Explicitly provided traffic rules or speed limits
+
+Treat the JSON as perception output, not unquestionable ground truth.
+
+Do not infer visual information that is not represented in the JSON.
+
+Do not assume that missing fields or empty detections mean that the corresponding object does not exist.
+
+If the JSON is incomplete, ambiguous, or internally inconsistent, acknowledge the limitation instead of inventing missing information.
+
+Use the semantic information to support the driving recommendation, not merely to describe the scene.
     Json data:
     {json}""",
 
     "image_json": """
-You are a traffic scene understanding and driving recommendation assistant.
-    Your task is to understand the current traffic situation from the information provided and give a safe, objective, evidence-based driving recommendation.
-    Follow these rules strictly:
-    1. EVIDENCE
-    - Use ONLY information supported by the provided input.
-    - Do not invent or assume objects, vehicles, lanes, road markings, traffic signs, traffic signals, speed limits, road conditions, hazards, or traffic rules.
-    - If important information is unclear, missing, or ambiguous, explicitly state the uncertainty rather than guessing.
-    - Never estimate or infer a speed limit when it is not explicitly provided.
-    2. TRAFFIC UNDERSTANDING
-    Before making a recommendation, consider the following information when available:
-    - Road environment and road geometry
-    - Ego vehicle position and ego lane
-    - Left and right lane boundaries
-    - Neighboring lanes
-    - Vehicle position relative to the ego lane center
-    - Relevant surrounding vehicles and potential conflicts
-    - Traffic signs and traffic signals
-    - Applicable speed limits or traffic rules explicitly provided
-    - Potential hazards and uncertainties
-    These are internal considerations. Do not list them unless they are relevant to the final decision.
-    3. DECISION MAKING
-    - Base the recommendation on the actual traffic situation, not on generic driving advice.
-    - Prioritize safety.
-    - Do not recommend a lane change unless there is a clear reason supported by the evidence.
-    - Do not recommend overtaking unless clearly justified by the available evidence.
-    - Do not recommend acceleration or braking unless supported by the traffic situation.
-    - If maintaining the current lane and speed is the safest reasonable action, say so explicitly.
-    - When uncertainty could affect the driving decision, choose the safer reasonable action and briefly state the uncertainty.
-    4. HALLUCINATION CONTROL
-    - Never fill missing information with assumptions.
-    - Do not treat an absence of detected information as proof that the object does not exist unless the input explicitly supports that conclusion.
-    - Do not create traffic rules, speed limits, hazards, or road events that are not supported by the input.
-    5. RESPONSE
-    - Be concise, practical, and specific.
-    - Keep the entire response under 120 words.
-    - Focus only on information relevant to the current driving decision.
-    - Do not repeat the same information across sections.
-    - Do not enumerate hypothetical actions or situations that are not relevant to the current scene.
-    - Do not mention the input format, model, prompt, or perception pipeline.
-    - Do not describe your reasoning process.
-    Respond using exactly this structure:
-    ### Situation Assessment
-    Maximum 2 sentences.
-    ### Driving Recommendation
-    Maximum 2 sentences.
-    ### Safety Considerations
-    - Maximum 3 bullet points.
-    - Include only safety considerations relevant to the current scene.
-    - Avoid generic advice.
-    Use BOTH the provided traffic scene image and the semantic scene JSON.
-    The image provides direct visual evidence about the traffic scene.
-    The semantic JSON provides structured perception information extracted from the scene.
-    Use both sources together to build the most accurate understanding of the current traffic situation.
-    - When the image and JSON agree, combine their information.
-    - When the JSON provides useful structured information that is not directly measurable from the image, use it as supporting information.
-    - When the image provides clear visual evidence that is missing or inconsistent with the JSON, use the visual evidence for the traffic assessment.
-    - When the two sources clearly conflict and the conflict affects the driving decision, briefly state the uncertainty.
-    - Do not silently modify, reinterpret, or invent information to reconcile conflicts.
-    - Do not assume that the JSON is always correct.
-    - Do not describe every field in the JSON. Use only information relevant to the current driving decision.
+
+Use BOTH the traffic scene image and the semantic lane JSON as complementary sources of evidence.
+
+The main objective is to build the most accurate lane-level understanding by combining both sources.
+
+For each of the four lane-level semantics:
+
+1. Lane count
+2. Ego lane
+3. Vehicle offset
+4. Neighbor lanes
+
+use the following rule:
+
+- First use the image to independently understand what is visually observable.
+- Use the JSON to supplement information that is difficult, ambiguous, or not reliably measurable from the image.
+- If the image and JSON agree, combine the information.
+- If the JSON provides precise structured information such as lane indices, lane center, offset, or lane width, use that information to improve the lane-level assessment.
+- If the image clearly contradicts the JSON, do not blindly follow the JSON. Use the stronger evidence and briefly acknowledge important uncertainty.
+- Do not ignore useful information simply because it comes from only one source.
+
+OFFSET ANALYSIS:
+
+When offset and lane width are available, assess the vehicle's lateral position relative to the lane center.
+
+Use the offset ratio when provided.
+
+As a practical interpretation:
+- Near 0%: approximately centered.
+- Moderate offset: noticeably displaced from the center but still within the lane.
+- Offset above approximately 25 percent of lane width: treat as close to a lane boundary and consider it a potential lateral safety concern.
+
+Do not treat the 25% threshold as an absolute traffic rule. Use it as a practical interpretation of lateral position.
+
+NEIGHBOR LANE ANALYSIS:
+
+Determine:
+- Whether the ego vehicle is in a left, middle, or right position among the visible lanes.
+- Number of neighboring lanes on each side.
+- Whether a neighboring lane is relevant to the current driving decision.
+
+The final recommendation should be based primarily on the combined lane count, ego lane, offset, and neighboring-lane information.
     Json data:
     {json}""",
+
+    # Chỉ dẫn định dạng output - CỐ TÌNH tách riêng, nối vào CUỐI CÙNG (sau
+    # DEFAULT_PROMPTS[mode], tức sau cả khối JSON data với json_only/
+    # image_json) thay vì để trong "common". Lý do: nếu để trong "common",
+    # chỉ dẫn này sẽ nằm TRƯỚC khối JSON, khiến giữa chỉ dẫn và điểm model
+    # bắt đầu sinh câu trả lời có xen 1 đoạn JSON dài - LLM thường tuân thủ
+    # tốt hơn các chỉ dẫn nằm gần cuối prompt (recency), nên để xa JSON dài
+    # có rủi ro model "quên" ràng buộc output khi JSON càng dài.
+    "output_format": """
+
+5. OUTPUT
+
+Respond in exactly 3 parts, in this order, as plain sentences (no headers, no markdown):
+1. Situation: 1-2 sentences on the specific decision-relevant evidence observed.
+2. Recommendation: 1 sentence stating the driving action.
+3. Safety note: 1 sentence on the most relevant risk, or state that no specific safety concern was identified.
+
+Every part must reference the specific evidence it relies on (for example: the observed signal color, the specific lane/position fact, the specific hazard) instead of generic statements like "no urgent signs" with no supporting detail.
+Do not omit any of the 3 parts, even when the answer is simple.
+Do not describe the reasoning process.
+Do not mention the input format, model, prompt, or perception pipeline.
+Do not repeat the same information across parts.
+""",
 }
 
 
@@ -338,6 +315,7 @@ def call_llm(
     max_tokens: int,
     temperature: float,
     top_p: float,
+    frequency_penalty: float,
     seed: Optional[int],
     timeout: int,
 ) -> str:
@@ -359,6 +337,7 @@ def call_llm(
         "max_tokens": max_tokens,
         "temperature": temperature,
         "top_p": top_p,
+        "frequency_penalty": frequency_penalty,
         "stream": False,
     }
     if seed is not None:
@@ -380,18 +359,30 @@ def find_stems(mode: str, image_dir: Optional[str], json_dir: Optional[str]) -> 
     của 1 ảnh cụ thể - nếu không lọc, --json-dir trỏ thẳng vào thư mục output
     của batch_process.py sẽ luôn bị cảnh báo "JSON không có ảnh tương ứng"
     một cách vô nghĩa ở mỗi lần chạy.
+
+    BUG ĐÃ SỬA: batch_process.py (sau khi thêm scene_summarizer.py) giờ ghi
+    THÊM <tên>_brief.json (bản rút gọn) cạnh <tên>.json (thô) trong cùng thư
+    mục output - file này KHÔNG bắt đầu bằng "_" (chỉ có "_brief" ở giữa tên)
+    nên lọt qua bộ lọc cũ, bị hiểu nhầm thành 1 "ảnh" riêng tên "<tên>_brief"
+    (gấp đôi số lượng thực tế, gửi nhầm JSON rút gọn cho LLM như thể là scene
+    thật). Nay lọc thêm mọi tên kết thúc bằng "_brief".
     """
+    def _is_scene_json(name: str) -> bool:
+        if not name.lower().endswith(".json") or name.startswith("_"):
+            return False
+        return not os.path.splitext(name)[0].endswith("_brief")
+
     if mode == "image_only":
         names = os.listdir(image_dir)
         return sorted(os.path.splitext(n)[0] for n in names if n.lower().endswith(IMAGE_EXTENSIONS) and not n.startswith("_"))
 
     if mode == "json_only":
         names = os.listdir(json_dir)
-        return sorted(os.path.splitext(n)[0] for n in names if n.lower().endswith(".json") and not n.startswith("_"))
+        return sorted(os.path.splitext(n)[0] for n in names if _is_scene_json(n))
 
     # image_json: chỉ xử lý các tên xuất hiện ở CẢ 2 thư mục
     image_stems = {os.path.splitext(n)[0] for n in os.listdir(image_dir) if n.lower().endswith(IMAGE_EXTENSIONS) and not n.startswith("_")}
-    json_stems = {os.path.splitext(n)[0] for n in os.listdir(json_dir) if n.lower().endswith(".json") and not n.startswith("_")}
+    json_stems = {os.path.splitext(n)[0] for n in os.listdir(json_dir) if _is_scene_json(n)}
 
     missing_json = sorted(image_stems - json_stems)
     missing_image = sorted(json_stems - image_stems)
@@ -433,6 +424,7 @@ def process_one(args, stem: str) -> None:
         max_tokens=args.max_tokens,
         temperature=args.temperature,
         top_p=args.top_p,
+        frequency_penalty=args.frequency_penalty,
         seed=args.seed,
         timeout=args.timeout,
     )
@@ -446,6 +438,12 @@ def run_batch(args) -> None:
     os.makedirs(args.output_dir, exist_ok=True)
 
     stems = find_stems(args.mode, args.image_dir, args.json_dir)
+    if args.stems:
+        wanted = [s.strip() for s in args.stems.split(",") if s.strip()]
+        missing = [s for s in wanted if s not in stems]
+        if missing:
+            logger.warning(f"{len(missing)} stem trong --stems không tìm thấy dữ liệu tương ứng, bỏ qua: {missing}")
+        stems = [s for s in wanted if s in stems]
     if args.limit:
         stems = stems[: args.limit]
     if not stems:
@@ -508,9 +506,19 @@ def main() -> None:
     parser.add_argument("--base-url", type=str, default=DEFAULT_BASE_URL, help=f"Mặc định: {DEFAULT_BASE_URL}")
     parser.add_argument("--api-key", type=str, default=os.environ.get("NVIDIA_API_KEY"), help="Mặc định đọc từ biến môi trường NVIDIA_API_KEY")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL)
-    parser.add_argument("--max-tokens", type=int, default=1024)
+    parser.add_argument(
+        "--max-tokens", type=int, default=400,
+        help="Giới hạn token sinh ra - hạ từ 1024 xuống 400 (mặc định) để chặn thiệt hại nếu model bị lặp "
+             "vô hạn (đã gặp thực tế: 1 output lặp cùng 1 câu ~6 lần rồi bị cắt cụt ở max_tokens cũ).",
+    )
     parser.add_argument("--temperature", type=float, default=0.2)
     parser.add_argument("--top-p", type=float, default=0.7)
+    parser.add_argument(
+        "--frequency-penalty", type=float, default=0.4,
+        help="Phạt token lặp lại (0.0-2.0, chuẩn OpenAI-compatible) - thêm để chặn hiện tượng model lặp "
+             "vô hạn cùng 1 câu (gặp thực tế ở ảnh có ít thông tin, model lặp lại "
+             "'The image does not provide enough information...' nhiều lần liên tiếp).",
+    )
     parser.add_argument("--seed", type=int, default=None, help="Cố định seed để kết quả tái lập được (tùy chọn)")
     parser.add_argument("--timeout", type=int, default=120, help="Timeout mỗi request (giây)")
     parser.add_argument(
@@ -520,6 +528,12 @@ def main() -> None:
     )
 
     parser.add_argument("--limit", type=int, default=None, help="Giới hạn số mục xử lý (test nhanh)")
+    parser.add_argument(
+        "--stems", type=str, default=None,
+        help="Chỉ xử lý đúng các tên file này (không phần mở rộng), cách nhau bởi dấu phẩy, "
+             "ví dụ --stems 1,9,27,50,116 - dùng để test nhanh 1 bộ ảnh chẩn đoán cố định sau "
+             "mỗi lần sửa prompt, thay vì phải chạy hết cả thư mục.",
+    )
     parser.add_argument("--overwrite", action="store_true", help="Ghi đè cả những mục đã có sẵn .txt output")
 
     args = parser.parse_args()
@@ -534,7 +548,7 @@ def main() -> None:
     elif args.prompt_file:
         args.prompt_template = open(args.prompt_file, "r", encoding="utf-8").read()
     else:
-        args.prompt_template = DEFAULT_PROMPTS[args.mode]
+        args.prompt_template = DEFAULT_PROMPTS["common"] + DEFAULT_PROMPTS[args.mode] + DEFAULT_PROMPTS["output_format"]
 
     if args.mode in ("image_only", "image_json") and not args.image_dir:
         parser.error("--image-dir bắt buộc với mode này")

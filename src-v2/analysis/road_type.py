@@ -115,7 +115,7 @@ class RoadTypeAnalyzer:
         x_top = self._x_positions_near_y(lanes, y_top)
 
         if not x_bottom:
-            return RoadGeometry(geometry_type="unknown", lane_count=len(lanes))
+            return RoadGeometry(geometry_type="unknown", lane_count=self._count_real_lanes(lanes))
 
         spread_bottom = max(x_bottom) - min(x_bottom)
         coverage_ratio = spread_bottom / image_width if image_width > 0 else 0.0
@@ -137,9 +137,24 @@ class RoadTypeAnalyzer:
             spread_pixels=float(spread_bottom),
             coverage_ratio=float(coverage_ratio),
             convergence_ratio=float(convergence_ratio),
-            lane_count=len(lanes),
+            lane_count=self._count_real_lanes(lanes),
             geometry_type=geometry_type,
         )
+
+    def _count_real_lanes(self, lanes: List[Lane]) -> int:
+        """
+        Số LÀN thực tế = số ĐƯỜNG BIÊN phát hiện được trừ 1 (1 làn nằm giữa 2
+        đường biên kề nhau, giống quy ước nhãn của CULane).
+
+        BUG ĐÃ SỬA: bản cũ dùng thẳng `len(lanes)` (số đường biên) làm
+        lane_count - xác nhận bằng cách đối chiếu 199 ảnh gán nhãn tay: field
+        này luôn LỚN HƠN số làn thật đúng 1 đơn vị ở ~90% ảnh. Giá trị này
+        được nhúng thẳng vào prompt JSON gửi cho LLM (xem
+        llm_batch_client.py: json.dumps(json_data)), nên lỗi lệch +1 làn này
+        truyền thẳng thành thông tin sai trong input của LLM (ví dụ ảnh có
+        3 đường biên/2 làn thật bị mô tả nhầm thành "4 lanes").
+        """
+        return max(len(lanes) - 1, 0)
 
     def _x_positions_near_y(self, lanes: List[Lane], y_target: int, tolerance: int = 50) -> List[float]:
         """Lấy tọa độ x trung bình của mỗi làn tại các điểm gần y_target."""
@@ -151,14 +166,22 @@ class RoadTypeAnalyzer:
         return positions
 
     def _infer_environment(self, geometry: RoadGeometry) -> str:
-        """Suy luận môi trường đường (đô thị / cao tốc / nông thôn) từ số làn và độ phủ."""
+        """
+        Suy luận môi trường đường (đô thị / cao tốc / nông thôn) từ số làn và độ phủ.
+
+        Ngưỡng đã hạ 1 bậc so với bản cũ (>=4/>=3/<=2 -> >=3/>=2/<=1) để khớp
+        với _count_real_lanes() - lane_count nay đo số LÀN thay vì số ĐƯỜNG
+        BIÊN, nên giá trị tối đa quan sát được cũng giảm từ 4 xuống 3 (4 đường
+        biên UFLD-v2 trả về nhiều nhất -> tối đa 3 làn). Giữ nguyên ngưỡng cũ
+        sẽ khiến nhánh "urban_marketplace" (>=4) không bao giờ đạt được nữa.
+        """
         if geometry.geometry_type == "narrow":
             return "narrow_road"
-        if geometry.lane_count >= 4 and geometry.coverage_ratio > 0.5:
+        if geometry.lane_count >= 3 and geometry.coverage_ratio > 0.5:
             return "urban_marketplace"
-        if geometry.lane_count >= 3:
+        if geometry.lane_count >= 2:
             return "urban_multi_lane"
-        if geometry.lane_count <= 2:
+        if geometry.lane_count <= 1:
             return "highway" if geometry.coverage_ratio > 0.4 else "rural_road"
         return "urban_road"
 

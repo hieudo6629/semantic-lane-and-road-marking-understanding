@@ -5,7 +5,7 @@
 
 models:
   # Model Ultra-Fast-Lane-Detection-v2 - xem perception/lane_detector.py
-  lane_model_path: "C:/Users/Hieu/IdeaProjects/Semantic Traffic/model/tusimple_res34.pth"
+  lane_model_path: "C:/Users/Hieu/IdeaProjects/Semantic Traffic/model/culane_res34.pth"
   # Thư mục gốc repo Ultra-Fast-Lane-Detection-v2 (chứa thư mục con "model/")
   ufld_repo_path: "C:/Users/Hieu/IdeaProjects/Semantic Traffic/Ultra-Fast-Lane-Detection-v2"
   # Dataset/backbone dùng để TRAIN file lane_model_path ở trên - PHẢI khớp
@@ -15,10 +15,10 @@ models:
   #   lane_backbone: "18" | "34"
   # Ví dụ đổi sang model Tusimple-resnet18: sửa lane_model_path trỏ tới
   # tusimple_res18.pth, rồi đổi lane_dataset: "tusimple", lane_backbone: "18".
-  lane_dataset: "tusimple"
+  lane_dataset: "culane"
   lane_backbone: "34"
   # Model YOLOv8 nhận diện biển báo đã train (xem perception/sign_detector.py)
-  sign_model_path: "../../model/yolov8n_trained_best.pt"
+  sign_model_path: "../../../model/yolov8n_tt100k_best.pt"
   device: "cpu"   # "cpu" | "cuda"
 
 sign_detection:

@@ -1,0 +1,5 @@
+Situation: The ego vehicle is at a red traffic light on a four-lane road with a bike lane on the left and a pedestrian crossing in front. The road is flanked by tall residential buildings.
+
+Recommendation: Stop and wait for the traffic light to turn green.
+
+Safety note: Be cautious of pedestrians and cyclists crossing the street when the light turns green.

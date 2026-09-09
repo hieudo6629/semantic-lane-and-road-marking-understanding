@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 
 # Load model
 # model_path = 'model/yolov8n_trained_best.pt'  # Đường dẫn đến file .pt của bạn
-model_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\model\vntsdb46_best.pt'
+model_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\model\yolov8n.pt'
 model = YOLO(model_path)
 
 # Đường dẫn ảnh input
-image_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\image_test\10017.png'  # Đường dẫn đến ảnh cần detect
+image_path = r'C:\Users\Hieu\IdeaProjects\Semantic Traffic\semantic-road-marking-understanding\src-v2\input-traffic-sign\116.jpg'  # Đường dẫn đến ảnh cần detect
 
 # Chạy detection
 results = model(image_path)

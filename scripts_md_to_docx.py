@@ -14,8 +14,8 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-SRC = "bao_cao_luan_van.md"
-OUT = "bao_cao_luan_van.docx"
+SRC = sys.argv[1] if len(sys.argv) > 1 else "bao_cao_luan_van.md"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "bao_cao_luan_van.docx"
 
 BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 

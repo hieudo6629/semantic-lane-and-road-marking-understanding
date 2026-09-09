@@ -144,36 +144,103 @@ EVALUATION_CRITERIA = {
 # số ghi trong đây (×3, ×5...) PHẢI khớp với "weight" trong EVALUATION_CRITERIA
 # ở trên - đây là 2 nơi khai báo cùng 1 thông tin, không tự động đồng bộ với
 # nhau, sửa 1 bên thì phải sửa bên kia cho khớp.
-EVALUATION_INSTRUCTIONS = """You are an expert evaluator of AI traffic-scene understanding and driving recommendations.
-Evaluate the 3 outputs for the SAME traffic image independently.
-Use the image as the visual reference. Do NOT compare outputs when assigning scores.
-Score based on correctness and evidence, not writing quality or verbosity.
+EVALUATION_INSTRUCTIONS = """You are an expert evaluator of LLM-based traffic decision support.
+
+Evaluate the three outputs generated for the SAME traffic image independently.
+
+Use the original image as the visual reference for factual correctness.
+
+Do NOT compare the outputs when assigning individual scores.
+
+Evaluate each output according to the information available to that experiment:
+- Image Only had access only to the image.
+- JSON Only had access only to the semantic JSON.
+- Image + JSON had access to both.
+
+Do not penalize an output for failing to mention information that was unavailable to its input.
+
+The evaluation focuses specifically on road/lane/sign understanding and how this information supports the driving decision.
 
 Criteria:
-1. situation_understanding: correct understanding of relevant road, traffic, and hazards.
-2. road_understanding: correct road geometry, lanes, boundaries, and neighboring lanes.
-3. lane_ego_position: correct ego lane, position, and offset when supported.
-4. traffic_sign_rule: correct signs, signals, and explicitly supported rules/speed limits.
-5. driving_recommendation: safe, appropriate, necessary, specific, and evidence-based action.
-6. safety_considerations: relevant safety risks without generic or unsupported claims.
+
+1. situation_understanding
+Correct understanding of relevant road, traffic, and hazards.
+
+2. road_understanding
+Correct road geometry, lanes, boundaries, and neighboring lanes.
+
+3. lane_ego_position
+Correct ego lane, position, and offset when supported by the available evidence.
+
+4. traffic_sign_rule
+Correct signs, signals, and explicitly supported rules/speed limits.
+
+5. driving_recommendation
+Safe, appropriate, necessary, specific, and evidence-based action.
+
+6. safety_considerations
+Relevant safety risks without generic or unsupported claims.
+
 All six criteria are equally weighted.
+
 Each criterion is scored independently from 1 to 5.
-The maximum score is 5 for every criterion.
-Do not apply different weights between criteria.
+
 Scoring:
-5 = Correct and complete; no meaningful errors.
-4 = Mostly correct; minor non-critical errors or omissions.
-3 = Partially correct; noticeable errors, but main situation is understood.
-2 = Major errors that affect the assessment.
+
+5 = Correct and well supported; no meaningful error.
+4 = Mostly correct; only minor non-critical errors or omissions.
+3 = Partially correct; noticeable error or omission, but the main understanding remains usable.
+2 = Major error that affects scene understanding or the driving decision.
 1 = Incorrect, unsupported, or unusable.
 
-Important:
-- Unsupported assumptions or hallucinations reduce the relevant score.
-- Do not reward extra detail or verbosity.
-- Do not penalize omission of information that is irrelevant to the driving decision.
-- Do not infer speed limits, signs, hazards, or traffic conditions without evidence.
-- Evaluate each criterion only from information relevant to that criterion.
-- Give one concise sentence explaining each score."""
+Important evaluation rules:
+
+- Score correctness and evidence, not writing quality or verbosity.
+- Unsupported claims and hallucinations reduce the relevant score.
+- Do not reward generic safety advice.
+- Do not penalize omission of information that was unavailable or irrelevant to the experiment.
+- Do not infer a speed limit without explicit evidence.
+- Do not treat missing or undetected information as proof that an object does not exist.
+- Evaluate each criterion independently.
+- A correct recommendation does not automatically mean the scene understanding is correct.
+- Correctly describing scene information does not automatically mean the driving recommendation is correct.
+- For driving_recommendation, check whether relevant road/lane/ego/sign evidence actually supports the recommendation.
+- Give one concise sentence explaining each score.
+
+Return the result in this format:
+
+{
+  "situation_understanding": {
+    "image_only": {"score": X, "reason": "..."},
+    "json_only": {"score": X, "reason": "..."},
+    "image_json": {"score": X, "reason": "..."}
+  },
+  "road_understanding": {
+    "image_only": {"score": X, "reason": "..."},
+    "json_only": {"score": X, "reason": "..."},
+    "image_json": {"score": X, "reason": "..."}
+  },
+  "lane_ego_position": {
+    "image_only": {"score": X, "reason": "..."},
+    "json_only": {"score": X, "reason": "..."},
+    "image_json": {"score": X, "reason": "..."}
+  },
+  "traffic_sign_rule": {
+    "image_only": {"score": X, "reason": "..."},
+    "json_only": {"score": X, "reason": "..."},
+    "image_json": {"score": X, "reason": "..."}
+  },
+  "driving_recommendation": {
+    "image_only": {"score": X, "reason": "..."},
+    "json_only": {"score": X, "reason": "..."},
+    "image_json": {"score": X, "reason": "..."}
+  },
+  "safety_considerations": {
+    "image_only": {"score": X, "reason": "..."},
+    "json_only": {"score": X, "reason": "..."},
+    "image_json": {"score": X, "reason": "..."}
+  }
+}"""
 
 # ============================================================
 # HÀM ĐỌC FILE / TIỆN ÍCH
