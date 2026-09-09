@@ -143,7 +143,7 @@ Phần lớn nghiên cứu ADAS hiện nay tập trung vào tầng nhận diện
 
 Sự phát triển gần đây của mô hình ngôn ngữ đa phương thức (Vision-Language Model — VLM) mở ra hướng tiếp cận lấp đầy khoảng trống này, nhờ khả năng tổng hợp ảnh quan sát và dữ liệu ngữ nghĩa có cấu trúc (JSON) để sinh khuyến nghị bằng ngôn ngữ tự nhiên. Nguyên lý cấp thêm ngữ cảnh có cấu trúc để tăng độ chính xác và giảm ảo giác cho mô hình sinh đã được kiểm chứng cả ở LLM nói chung (Retrieval-Augmented Generation [34]) lẫn trong lái xe cụ thể: DriveVLM [23] kết hợp VLM với thông tin không gian có cấu trúc để bù hạn chế suy luận không gian, còn Talk2BEV [25] cho thấy đặt VLM vào biểu diễn bản đồ có cấu trúc cải thiện rõ chất lượng suy luận so với chỉ dùng ảnh. Kế thừa nguyên lý này, đề tài đặt giả thuyết trung tâm — kết hợp ảnh với JSON ngữ nghĩa sẽ cải thiện khuyến nghị lái xe của VLM so với chỉ dùng ảnh thô — và kiểm chứng định lượng ở mục 4.5.
 
-Do không gian ngữ nghĩa giao thông đầy đủ bao quát rất nhiều yếu tố (hạ tầng đường bộ, phương tiện xung quanh, chướng ngại vật động...), để đảm bảo tính khả thi, đề tài thu hẹp phạm vi vào hai thành phần hạ tầng cố định nền tảng nhất — làn đường và biển báo giao thông — quyết định trực tiếp việc định vị không gian và quy tắc bắt buộc đối với phương tiện.
+Do không gian ngữ nghĩa giao thông đầy đủ bao quát rất nhiều yếu tố (hạ tầng đường bộ, phương tiện xung quanh, chướng ngại vật động...), để đảm bảo tính khả thi, đề tài này thu hẹp phạm vi vào hai thành phần hạ tầng cố định nền tảng nhất — làn đường và biển báo giao thông — quyết định trực tiếp việc định vị không gian và quy tắc bắt buộc đối với phương tiện.
 
 Trên cơ sở đó, đề tài hướng tới câu hỏi nghiên cứu cốt lõi:
 
@@ -151,46 +151,71 @@ Trên cơ sở đó, đề tài hướng tới câu hỏi nghiên cứu cốt l�
 
 ## 1.2. Mục tiêu nghiên cứu
 
-Đề tài tập trung vào hai thành phần ngữ nghĩa cốt lõi của tình huống giao thông:
-
-1. Hiểu làn đường (lane understanding): số làn, làn ego, độ lệch tâm xe, làn lân cận, hình dạng đường (thẳng/cong).
-2. Hiểu biển báo giao thông (traffic sign understanding): phát hiện và phân loại biển báo giao thông.
-
-Hai thành phần này được chuyển hóa thành ngữ nghĩa có cấu trúc, kết hợp với ảnh gốc, đưa vào mô hình ngôn ngữ lớn để sinh khuyến nghị lái xe, và được đánh giá bằng phương pháp luận định lượng đáng tin cậy.
+Tương ứng với câu hỏi nghiên cứu cốt lõi được đặt ra tại Mục 1.1, mục tiêu tổng quát của đề tài là đề xuất, phát triển và kiểm chứng định lượng một tầng xử lý trung gian nhằm chuyển đổi dữ liệu nhận diện hạ tầng giao thông thô thành tri thức ngữ nghĩa có cấu trúc (dạng JSON), đóng vai trò làm ngữ cảnh bổ sung cho Mô hình Ngôn ngữ Đa phương thức (VLM) trong bài toán sinh khuyến nghị lái xe bằng ngôn ngữ tự nhiên.
+Bám sát phạm vi nghiên cứu đã xác định, đề tài tập trung giải quyết hai thành phần ngữ nghĩa hạ tầng cốt lõi trong tình huống giao thông bao gồm:
+Ngữ nghĩa làn đường (Lane Semantics): Xác định tổng số làn đường, làn đường hiện tại của phương tiện (ego lane), độ lệch tâm của xe, số làn lân cận và hình thái đường (đường thẳng hay đường cong)
+Ngữ nghĩa biển báo giao thông (Traffic Sign Semantics): Định vị, phân loại các biển báo giao thông xuất hiện trong tầm quan sát và trích xuất quy tắc giao thông tương ứng.
+Để cụ thể hóa mục tiêu tổng quát, đề tài triển khai ba mục tiêu cụ thể sau:
+Phát triển mô-đun chuyển đổi ngữ nghĩa: Thiết kế và cài đặt mô-đun tổng hợp dữ liệu đầu ra từ các mô hình nhận diện chuyên biệt (làn đường và biển báo) để trích xuất thành các thuộc tính ngữ nghĩa giao thông có cấu trúc (Mục 3.3, 3.4).
+Xây dựng biểu diễn dữ liệu và phương pháp gợi ý (Prompting): Thiết kế cấu trúc JSON ngữ nghĩa tối ưu kết hợp với kỹ thuật xây dựng câu lệnh (prompt engineering) phù hợp, nhằm giúp VLM khai thác hiệu quả tri thức ngữ cảnh trong quá trình suy luận (Mục 3.4, 3.5).
+Đánh giá và kiểm chứng định lượng: Xây dựng khung phương pháp luận đánh giá thực nghiệm đáng tin cậy — ứng dụng mô hình LLM làm giám khảo (LLM-as-a-Judge) — nhằm định lượng chính xác mức độ cải thiện về chất lượng, độ chính xác và tính căn cứ của khuyến nghị do VLM sinh ra khi có sự kết hợp của JSON ngữ nghĩa so với việc chỉ sử dụng dữ liệu ảnh thô (Mục 3.7, 4.5).
+Việc hoàn thành các mục tiêu cụ thể nêu trên chính là cơ sở thực nghiệm và luận cứ khoa học để trả lời trực tiếp cho câu hỏi nghiên cứu cốt lõi của đề tài.
 
 ## 1.3. Phạm vi dữ liệu
 
-Để đảm bảo tính khách quan, khả năng tái lập, và có thể đối sánh với các nghiên cứu khác, đề tài sử dụng hai bộ dữ liệu công khai, phổ biến, đã được cộng đồng nghiên cứu kiểm chứng và có chung một đặc điểm giao thông — giao thông đô thị Trung Quốc:
+Nhằm thực thi hóa các mục tiêu nghiên cứu đã đề ra và đảm bảo tính chuẩn hóa, khả năng tái lập (reproducibility) cũng như tính đối sánh khách quan với các công trình tiên tiến trên thế giới, đề tài khai thác hai tập dữ liệu chuẩn (benchmark datasets) công khai, quy mô lớn và đã được cộng đồng khoa học quốc tế kiểm chứng. Cả hai tập dữ liệu này đều phản ánh đặc trưng giao thông đô thị phức tạp tại khu vực Đông Á (Trung Quốc):
 
-- **CULane** — benchmark chuẩn cho bài toán phát hiện làn đường, dùng để đánh giá module hiểu làn đường và làm dữ liệu chính cho toàn bộ pipeline.
-- **TT100K** (Tsinghua-Tencent 100K) — benchmark chuẩn cho bài toán phát hiện biển báo giao thông, dùng để huấn luyện và đánh giá module biển báo.
+Tập dữ liệu CULane [6]: Chuẩn mực benchmark cho bài toán phát hiện làn đường trong môi trường giao thông phức tạp (bao gồm các kịch bản thời tiết, ánh sáng biến đổi, mật độ phương tiện cao và đường cong/thẳng). Tập dữ liệu này được sử dụng để huấn luyện, đánh giá mô-đun trích xuất ngữ nghĩa làn đường và đóng vai trò là nguồn dữ liệu thị giác chính cho toàn bộ quy trình (pipeline) suy luận của VLM.
 
-Việc lựa chọn hai bộ dữ liệu phổ biến, có sẵn này — thay vì thu thập riêng dữ liệu Việt Nam ngay từ đầu — nhằm kiểm chứng tính hiệu quả của pipeline trên dữ liệu đã được chuẩn hóa, có thể đối sánh khách quan với các công trình khác, trước khi mở rộng sang bối cảnh giao thông Việt Nam. Hướng mở rộng này được trình bày ở Chương 5 (mục 5.4).
+Tập dữ liệu TT100K (Tsinghua-Tencent 100K) [9]: Tập dữ liệu benchmark quy mô lớn cho bài toán phát hiện và phân loại biển báo giao thông thực tế. Tập dữ liệu này cung cấp đa dạng các chủng loại biển báo với độ phân giải cao dưới nhiều điều kiện chiếu sáng khác nhau, phục vụ việc huấn luyện và đo lường hiệu năng của mô-đun trích xuất ngữ nghĩa biển báo.
+
+Việc lựa chọn hai bộ dữ liệu benchmark chuẩn hóa nêu trên — thay vì tiến hành thu thập và gán nhãn một tập dữ liệu riêng biệt tại Việt Nam ở giai đoạn này — mang tính chiến lược về mặt phương pháp luận. Tiếp cận này giúp phân tách rõ ràng hiệu năng của giải pháp đề xuất khỏi các yếu tố nhiễu do chất lượng gán nhãn thủ công gây ra, từ đó tạo tiền đề kiểm chứng định lượng chính xác giả thuyết nghiên cứu (sự cải thiện của VLM khi có dữ liệu JSON ngữ nghĩa). Sau khi mô hình được chứng minh tính hiệu quả trên các chuẩn mực quốc tế, việc mở rộng và tinh chỉnh (fine-tuning) pipeline cho bối cảnh giao thông đặc thù tại Việt Nam sẽ được thảo luận chi tiết như một hướng phát triển trọng tâm tại Chương 5 (Mục 5.4).
 
 ## 1.4. Câu hỏi nghiên cứu
 
-- **RQ1**: Module hiểu làn đường (dựa trên UFLD-v2 và xử lý ngữ nghĩa) đạt độ chính xác bao nhiêu khi đối chiếu với nhãn tay, và độ chính xác này có tổng quát hóa được sang dữ liệu độc lập không?
-- **RQ2**: Module hiểu biển báo (dựa trên YOLOv8 và TT100K) đạt hiệu quả thế nào, và những giới hạn nào cần lưu ý khi áp dụng trên các bộ dữ liệu khác nhau?
-- **RQ3**: Thông tin JSON ngữ nghĩa có cải thiện chất lượng khuyến nghị lái xe của VLM so với chỉ dùng ảnh hay không?
-- **RQ4**: Trong các mô hình VLM có thể tiếp cận được (miễn phí, chi phí thấp), mô hình nào phù hợp nhất cho bài toán này, xét trên độ tin cậy, chất lượng và khả năng vận hành?
-- **RQ5**: Phương pháp đánh giá bằng LLM-as-a-judge có đáng tin cậy không, và có thể định lượng độ tin cậy đó như thế nào?
+Trên cơ sở khoảng trống nghiên cứu và mục tiêu đã xác định, đề tài tập trung giải quyết Câu hỏi Nghiên cứu Cốt lõi (Core Research Question) sau:
+
+[RQ-Main]: Việc tích hợp thông tin ngữ nghĩa có cấu trúc (dạng JSON) có thực sự cải thiện chất lượng, độ chính xác và tính căn cứ của khuyến nghị lái xe do VLM sinh ra so với việc chỉ sử dụng dữ liệu ảnh thô hay không, và mức độ cải thiện này được định lượng như thế nào?
+
+Để trả lời thỏa đáng câu hỏi cốt lõi trên, đề tài cụ thể hóa thành 3 Câu hỏi Nghiên cứu Thành phần (Sub-Questions):
+
+RQ1 (Tầng trích xuất ngữ nghĩa): Các mô-đun nhận diện chuyên biệt (xây dựng trên kiến trúc UFLD-v2 cho làn đường và YOLOv8 cho biển báo TT100K) đạt độ chính xác bao nhiêu trong việc chuyển đổi dữ liệu thô thành ngữ nghĩa có cấu trúc, và có khả năng tổng quát hóa trên dữ liệu độc lập như thế nào?
+
+RQ2 (Thực nghiệm VLM): Trong số các mô hình VLM nguồn mở/chi phí thấp hiện nay, kiến trúc nào đạt sự cân bằng tối ưu giữa khả năng suy luận ngữ cảnh giao thông và chi phí vận hành?
+
+RQ3 (Phương pháp luận đánh giá): Phương pháp đánh giá tự động bằng LLM-as-a-Judge có đạt độ tin cậy và sự tương quan đủ cao với đánh giá của con người (Human evaluation) để định lượng chất lượng khuyến nghị lái xe hay không?
 
 ## 1.5. Đóng góp chính
 
-Các hệ VLM lái xe end-to-end quy mô lớn như DriveGPT4 [2], DriveLM [3] hay LMDrive [4] đã cho thấy khả năng tích hợp sâu suy luận ngôn ngữ vào vòng lặp điều khiển, nhưng đòi hỏi tài nguyên huấn luyện và dữ liệu lái xe quy mô lớn vượt quá phạm vi khả thi của một đề tài nghiên cứu độc lập (mục 2.3). Đề tài này vì vậy không đặt mục tiêu đề xuất một kiến trúc phát hiện làn đường/biển báo mới hay một hệ VLM end-to-end tương tự, mà tập trung đóng góp ở tầng tích hợp, chuyển đổi ngữ nghĩa và phương pháp luận đánh giá, với tầng suy luận theo hướng training-free — sử dụng VLM miễn phí qua API, không tinh chỉnh lại mô hình (mục 3.6); tầng perception biển báo có một bước tinh chỉnh YOLOv8n quy mô nhẹ trên TT100K (mục 3.2). Cụ thể, đề tài có bốn đóng góp:
+Khác với các kiến trúc VLM/VLA end-to-end quy mô lớn (như DriveGPT4 [2], DriveLM [3]) vốn đòi hỏi hạ tầng tính toán lớn, đề tài tiếp cận bài toán theo hướng không cần huấn luyện lại mô hình lớn (training-free) ở tầng suy luận. Đề tài không đề xuất một kiến trúc nhận diện mới, mà tập trung đóng góp vào tầng tích hợp ngữ nghĩa và phương pháp luận đánh giá.
 
-1. **Tầng chuyển đổi ngữ nghĩa được kiểm chứng định lượng**: chuyển output thô của UFLD-v2 sang ngữ nghĩa cấp quyết định (số làn, làn ego, độ lệch tâm, hình dạng đường), đạt Accuracy 77,3% trên ảnh có vạch kẻ rõ (N=176/200) và tổng quát hóa tốt sang dữ liệu độc lập tự thu thập (N=200, Precision 99,4%, Ego lane Accuracy 86,5%).
-2. **Minh chứng cho tầm quan trọng của tầng diễn giải ngữ nghĩa**: quá trình xây dựng tầng trên phát hiện một lỗi lệch đơn vị (off-by-one) khiến Accuracy ban đầu chỉ đạt 11,1%, dù UFLD-v2 đã đạt F1 = 76,0% ở tầng phát hiện. Bản thân việc sửa lỗi không phải một đóng góp thuật toán, nhưng là bằng chứng thực nghiệm cho luận điểm rằng chất lượng detector không tự động đảm bảo chất lượng hệ hỗ trợ quyết định — sai số có thể nằm ở tầng diễn giải ngữ nghĩa phía sau, một tầng thường ít được đầu tư kiểm chứng khi trọng tâm nghiên cứu đặt vào cải thiện độ chính xác của detector.
-3. **Phương pháp luận đánh giá LLM-as-a-judge được kiểm chứng độ tin cậy**, thay vì áp dụng "nguyên trạng" như các benchmark tổng quát: đối chiếu với đánh giá của con người (N=20) và đối chiếu đa-judge (Gemini, GPT-5 Mini, DeepSeek) trên cùng một rubric. Gemini đạt mức đồng thuận cao nhất trong ba judge (79,2% trong sai số ≤1 điểm), phù hợp với tiền lệ rằng LLM-as-a-judge có thể đạt độ tin cậy tiệm cận con người trong điều kiện phù hợp [5] (mục 2.4, 4.6).
-4. **Kết quả thực nghiệm định lượng cho RQ3** (N=200, ba judge độc lập): JSON ngữ nghĩa cải thiện chất lượng khuyến nghị lái xe so với chỉ dùng ảnh (Gemini: 3,32 → 4,53/5, tương đương +36%), nhất quán ở cả ba judge.
+Cụ thể, các đóng góp chính của luận văn bao gồm:
 
-**Ý nghĩa thực tiễn**. So với các hệ VLM/VLA end-to-end — vốn mang lại khả năng tích hợp sâu nhưng đòi hỏi dữ liệu lái xe quy mô lớn và hạ tầng huấn luyện đáng kể — pipeline trong đề tài này là một lựa chọn thay thế phù hợp khi nguồn lực hạn chế: một hệ hỗ trợ quyết định có khả năng diễn giải bằng ngôn ngữ tự nhiên, chi phí triển khai thấp, có thể được xây dựng từ các mô hình VLM sẵn có — phù hợp làm nền tảng cho ứng dụng dashcam/hộp đen thông minh, hoặc điểm khởi đầu để mở rộng sang dữ liệu giao thông Việt Nam (mục 5.4).
+Thực thi mô-đun diễn giải ngữ nghĩa hạ tầng: Xây dựng quy trình chuyển đổi dữ liệu tọa độ thô từ mô hình nhận diện chuyên biệt (UFLD-v2 và Yolov8n) thành các thuộc tính ngữ nghĩa hạ tầng (số làn, làn ego, làn lân cận, độ lệch tâm, hình thái đường, biển báo giao thông), bước đầu thử nghiệm khả năng tổng quát hóa trên tập dữ liệu độc lập (Mục 3.3, 4.3).
+
+Chỉ ra khoảng trống giữa tầng nhận diện và tầng hỗ trợ quyết định: Thông qua phân tích thực nghiệm, đề tài đưa ra luận điểm rằng độ chính xác của mô-đun phát hiện (detector) chưa đồng nghĩa với chất lượng của hệ hỗ trợ quyết định, qua đó nhấn mạnh vai trò của tầng diễn giải ngữ nghĩa trung gian (Mục 3.3, 4.3).
+
+Phân tích thực nghiệm phương pháp đánh giá LLM-as-a-Judge: Xây dựng quy trình đối chiếu đa giám khảo (Multi-judge alignment) trên cùng một bộ tiêu chí (rubric) và so sánh với đánh giá của con người. Kết quả thực nghiệm cho thấy LLM-as-a-Judge đạt độ tương quan triển vọng, cung cấp thêm tiền lệ tham khảo cho việc đánh giá tự động các hệ thống VLM giao thông (Mục 3.7, 4.6).
+
+Đánh giá định lượng tác động của JSON ngữ nghĩa: Cung cấp các kết quả thực nghiệm bước đầu cho thấy việc bổ sung dữ liệu JSON ngữ nghĩa có xu hướng cải thiện chất lượng và tính căn cứ của khuyến nghị do VLM sinh ra so với việc chỉ khai thác dữ liệu ảnh thô (Mục 4.5).
+
+**Ý nghĩa thực tiễn**. So với các hệ thống VLM end-to-end phức tạp và đắt đỏ, quy trình (pipeline) do đề tài đề xuất cung cấp một giải pháp thay thế khả thi và hiệu quả trong điều kiện tài nguyên tính toán hạn chế. Với chi phí triển khai thấp, khả năng diễn giải bằng ngôn ngữ tự nhiên và tính linh hoạt cao nhờ khai thác các VLM sẵn có thông qua API, hệ thống đóng vai trò là kiến trúc nền tảng triển vọng cho các ứng dụng camera hành trình (dashcam) thông minh, hộp đen thế hệ mới, hoặc làm tiền đề để mở rộng thích ứng với dữ liệu giao thông đặc thù tại Việt Nam (Mục 5.4).
 
 ## 1.6. Cấu trúc luận văn
 
-Chương 2 trình bày tổng quan các công trình liên quan, gồm các hướng nghiên cứu về phát hiện làn đường, phát hiện biển báo, mô hình ngôn ngữ lớn đa phương thức cho lái xe, và phương pháp luận LLM-as-a-judge. Chương 3 trình bày phương pháp luận: kiến trúc hệ thống, dữ liệu, thuật toán phân tích ngữ nghĩa, thiết kế prompt và phương pháp luận đánh giá. Chương 4 trình bày kết quả thực nghiệm và bàn luận, gồm chín mục — từ độ chính xác của từng module, kết quả trung tâm về đóng góp của JSON ngữ nghĩa, kiểm chứng độ tin cậy của phương pháp đánh giá, cho tới một thực nghiệm bổ sung và bàn luận làm rõ cơ chế đóng góp thực sự của JSON. Chương 5 tổng kết đóng góp, trả lời các câu hỏi nghiên cứu, thảo luận hạn chế và đề xuất hướng phát triển tiếp theo.
+Toàn văn luận văn được tổ chức thành 5 chương chính với nội dung trình bày theo thứ tự logic như sau:
 
-**Tóm tắt chương.** Chương này đã trình bày động lực nghiên cứu — khoảng trống giữa nhận diện cấp thấp và ngữ nghĩa giao thông có thể diễn giải — cùng mục tiêu, phạm vi dữ liệu, năm câu hỏi nghiên cứu và bốn đóng góp chính của đề tài. Chương 2 tiếp theo tổng quan các công trình liên quan theo bốn hướng: phát hiện làn đường, phát hiện biển báo, mô hình ngôn ngữ lớn đa phương thức cho lái xe, và phương pháp luận LLM-as-a-judge, làm cơ sở xác định các khoảng trống nghiên cứu cụ thể mà đề tài này góp phần lấp đầy.
+Chương 1: Giới thiệu (Introduction): Trình bày tổng quan về bối cảnh nghiên cứu, động lực đề tài, phát biểu bài toán, mục tiêu và phạm vi dữ liệu, hệ thống câu hỏi nghiên cứu, các đóng góp chính và ý nghĩa thực tiễn của đề tài.
+
+Chương 2: Tổng quan nghiên cứu và Cơ sở lý thuyết (Related Work & Theoretical Background): Tổng quan các công trình liên quan theo bốn trục nội dung chính bao gồm: phát hiện làn đường, phát hiện biển báo giao thông, ứng dụng Mô hình Ngôn ngữ Đa phương thức (VLM) trong lái xe tự hành, và phương pháp luận đánh giá LLM-as-a-Judge; qua đó xác định rõ khoảng trống tri thức mà đề tài hướng tới giải quyết.
+
+Chương 3: Phương pháp đề xuất (Proposed Methodology): Mô tả chi tiết kiến trúc hệ thống tổng thể, quy trình thu thập và xử lý dữ liệu, thuật toán trích xuất ngữ nghĩa hạ tầng (làn đường và biển báo), thiết kế biểu diễn JSON ngữ nghĩa, kỹ thuật gợi ý (prompt engineering) và khung phương pháp luận đánh giá.
+
+Chương 4: Thực nghiệm và Đánh giá (Experiments & Discussion): Trình bày chi tiết cấu hình thực nghiệm, kết quả định lượng của từng mô-đun thành phần, kết quả thực nghiệm trung tâm về tác động của JSON ngữ nghĩa đến VLM, kiểm chứng độ tin cậy của LLM-as-a-Judge, cùng các phân tích chuyên sâu làm rõ cơ chế đóng góp thực sự của ngữ cảnh có cấu trúc.
+
+Chương 5: Kết luận và Hướng phát triển (Conclusion & Future Work): Tổng kết các đóng góp chính, tổng hợp câu trả lời cho các câu hỏi nghiên cứu, thảo luận khách quan về các hạn chế còn tồn tại và đề xuất các hướng mở rộng nghiên cứu trong tương lai.
+
+Tóm tắt Chương 1. Chương 1 đã phân tích rõ bối cảnh và động lực nghiên cứu xuất phát từ khoảng trống giữa dữ liệu nhận diện hình học cấp thấp và nhu cầu diễn giải ngữ nghĩa giao thông cho người lái. Trên cơ sở đó, chương này đã xác lập mục tiêu nghiên cứu, phạm vi dữ liệu, hệ thống câu hỏi nghiên cứu cùng các đóng góp cốt lõi và ý nghĩa thực tiễn của luận văn. Chương 2 tiếp theo sẽ trình bày tổng quan các nghiên cứu liên quan nhằm làm nét hơn nữa nền tảng lý thuyết và cơ sở khoa học cho phương pháp đề xuất.
 
 ---
 
