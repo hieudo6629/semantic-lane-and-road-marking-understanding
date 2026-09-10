@@ -103,20 +103,15 @@ Mặc dù đã có nhiều cố gắng trong quá trình nghiên cứu và trìn
 
 | STT | Ký hiệu | Tên bảng |
 |---|---|---|
-| 1 | Bảng 2.1 | Tổng hợp các công trình liên quan về LLM/VLM cho lái xe |
-| 2 | Bảng 3.1 | Các nhóm trường trong JSON đầy đủ và lý do đưa vào |
-| 3 | Bảng 3.2 | Các trường trong JSON rút gọn và lý do giữ lại |
-| 4 | Bảng 3.3 | Cấu hình gọi API dùng chung cho ba mô hình ứng viên và ba chế độ input |
-| 5 | Bảng 3.4 | Mô tả từng mức điểm trong thang đánh giá 1–5 |
-| 6 | Bảng 4.1 | Độ chính xác module hiểu làn đường trước và sau khi sửa lỗi off-by-one (N=200) |
-| 7 | Bảng 4.2 | So sánh hiệu năng module hiểu làn đường theo nhóm có/không vạch kẻ đường rõ |
-| 8 | Bảng 4.3 | Đối chiếu module hiểu làn đường và biển báo giữa CULane và dữ liệu real-life độc lập |
-| 9 | Bảng 4.4 | So sánh chi tiết chất lượng nội dung giữa nemotron-nano-8b và ising-calibration-31b (Mean ± SD, kiểm định thống kê) |
-| 10 | Bảng 4.5 | Điểm chất lượng khuyến nghị lái xe (Mean ± SD) theo 3 chế độ input, chấm bởi 3 judge độc lập |
-| 11 | Bảng 4.6 | Kiểm định ý nghĩa thống kê khi so sánh cặp giữa 3 chế độ input, theo từng judge (N=200, dữ liệu bắt cặp theo ảnh) |
-| 12 | Bảng 4.7 | Điểm trung bình (Mean ± SD) 6 tiêu chí đánh giá của judge Gemini theo từng chế độ input |
-| 13 | Bảng 4.8 | Xếp hạng độ tin cậy của 3 judge khi đối chiếu với đánh giá của con người |
-| 14 | Bảng 4.9 | So sánh khả năng tự nhận diện ngữ nghĩa làn đường giữa pipeline UFLD-v2 và VLM |
+| 1 | Bảng 4.1 | Độ chính xác module hiểu làn đường trước và sau khi sửa lỗi off-by-one (N=200) |
+| 2 | Bảng 4.2 | So sánh hiệu năng module hiểu làn đường theo nhóm có/không vạch kẻ đường rõ |
+| 3 | Bảng 4.3 | Đối chiếu module hiểu làn đường và biển báo giữa CULane và dữ liệu real-life độc lập |
+| 4 | Bảng 4.4 | So sánh chi tiết chất lượng nội dung giữa nemotron-nano-8b và ising-calibration-31b (Mean ± SD, kiểm định thống kê) |
+| 5 | Bảng 4.5 | Điểm chất lượng khuyến nghị lái xe (Mean ± SD) theo 3 chế độ input, chấm bởi 3 judge độc lập |
+| 6 | Bảng 4.6 | Kiểm định ý nghĩa thống kê khi so sánh cặp giữa 3 chế độ input, theo từng judge (N=200, dữ liệu bắt cặp theo ảnh) |
+| 7 | Bảng 4.7 | Điểm trung bình (Mean ± SD) 6 tiêu chí đánh giá của judge Gemini theo từng chế độ input |
+| 8 | Bảng 4.8 | Xếp hạng độ tin cậy của 3 judge khi đối chiếu với đánh giá của con người |
+| 9 | Bảng 4.9 | So sánh khả năng tự nhận diện ngữ nghĩa làn đường giữa pipeline UFLD-v2 và VLM |
 
 ## DANH MỤC HÌNH
 
@@ -157,18 +152,14 @@ Trên cơ sở đó, đề tài hướng tới câu hỏi nghiên cứu cốt l�
 ## 1.2. Mục tiêu nghiên cứu
 
 Tương ứng với câu hỏi nghiên cứu cốt lõi được đặt ra tại Mục 1.1, mục tiêu tổng quát của đề tài là đề xuất, phát triển và kiểm chứng định lượng một tầng xử lý trung gian nhằm chuyển đổi dữ liệu nhận diện hạ tầng giao thông thô thành tri thức ngữ nghĩa có cấu trúc (dạng JSON), đóng vai trò làm ngữ cảnh bổ sung cho Mô hình Ngôn ngữ Đa phương thức (VLM) trong bài toán sinh khuyến nghị lái xe bằng ngôn ngữ tự nhiên.
-Bám sát phạm vi nghiên cứu đã xác định, đề tài tập trung giải quyết hai thành phần ngữ nghĩa hạ tầng cốt lõi trong tình huống giao thông:
-
-1. **Ngữ nghĩa làn đường** (Lane Semantics): xác định tổng số làn đường, làn đường hiện tại của phương tiện (ego lane), độ lệch tâm của xe, số làn lân cận và hình thái đường (đường thẳng hay đường cong).
-2. **Ngữ nghĩa biển báo giao thông** (Traffic Sign Semantics): định vị, phân loại các biển báo giao thông xuất hiện trong tầm quan sát và trích xuất quy tắc giao thông tương ứng.
-
+Bám sát phạm vi nghiên cứu đã xác định, đề tài tập trung giải quyết hai thành phần ngữ nghĩa hạ tầng cốt lõi trong tình huống giao thông bao gồm:
+Ngữ nghĩa làn đường (Lane Semantics): Xác định tổng số làn đường, làn đường hiện tại của phương tiện (ego lane), độ lệch tâm của xe, số làn lân cận và hình thái đường (đường thẳng hay đường cong)
+Ngữ nghĩa biển báo giao thông (Traffic Sign Semantics): Định vị, phân loại các biển báo giao thông xuất hiện trong tầm quan sát và trích xuất quy tắc giao thông tương ứng.
 Để cụ thể hóa mục tiêu tổng quát, đề tài triển khai ba mục tiêu cụ thể sau:
-
-1. **Phát triển mô-đun chuyển đổi ngữ nghĩa**: thiết kế và cài đặt mô-đun tổng hợp dữ liệu đầu ra từ các mô hình nhận diện chuyên biệt (làn đường và biển báo) để trích xuất thành các thuộc tính ngữ nghĩa giao thông có cấu trúc (mục 3.3, 3.4).
-2. **Xây dựng biểu diễn dữ liệu và phương pháp gợi ý (prompting)**: thiết kế cấu trúc JSON ngữ nghĩa tối ưu kết hợp với kỹ thuật xây dựng câu lệnh (prompt engineering) phù hợp, nhằm giúp VLM khai thác hiệu quả tri thức ngữ cảnh trong quá trình suy luận (mục 3.4, 3.5).
-3. **Đánh giá và kiểm chứng định lượng**: xây dựng khung phương pháp luận đánh giá thực nghiệm đáng tin cậy — ứng dụng mô hình LLM làm giám khảo (LLM-as-a-Judge) — nhằm định lượng mức độ cải thiện về chất lượng, độ chính xác và tính căn cứ của khuyến nghị do VLM sinh ra khi có sự kết hợp của JSON ngữ nghĩa so với khi chỉ sử dụng dữ liệu ảnh thô (mục 3.7, 4.5).
-
-Việc hoàn thành các mục tiêu cụ thể nêu trên là cơ sở thực nghiệm và luận cứ khoa học để trả lời trực tiếp cho câu hỏi nghiên cứu cốt lõi của đề tài.
+Phát triển mô-đun chuyển đổi ngữ nghĩa: Thiết kế và cài đặt mô-đun tổng hợp dữ liệu đầu ra từ các mô hình nhận diện chuyên biệt (làn đường và biển báo) để trích xuất thành các thuộc tính ngữ nghĩa giao thông có cấu trúc (Mục 3.3, 3.4).
+Xây dựng biểu diễn dữ liệu và phương pháp gợi ý (Prompting): Thiết kế cấu trúc JSON ngữ nghĩa tối ưu kết hợp với kỹ thuật xây dựng câu lệnh (prompt engineering) phù hợp, nhằm giúp VLM khai thác hiệu quả tri thức ngữ cảnh trong quá trình suy luận (Mục 3.4, 3.5).
+Đánh giá và kiểm chứng định lượng: Xây dựng khung phương pháp luận đánh giá thực nghiệm đáng tin cậy — ứng dụng mô hình LLM làm giám khảo (LLM-as-a-Judge) — nhằm định lượng chính xác mức độ cải thiện về chất lượng, độ chính xác và tính căn cứ của khuyến nghị do VLM sinh ra khi có sự kết hợp của JSON ngữ nghĩa so với việc chỉ sử dụng dữ liệu ảnh thô (Mục 3.7, 4.5).
+Việc hoàn thành các mục tiêu cụ thể nêu trên chính là cơ sở thực nghiệm và luận cứ khoa học để trả lời trực tiếp cho câu hỏi nghiên cứu cốt lõi của đề tài.
 
 ## 1.3. Phạm vi dữ liệu
 
@@ -252,33 +243,17 @@ Trong dòng nghiên cứu gần đây ứng dụng YOLOv8 cho bài toán này, L
 
 ## 2.3. Mô hình ngôn ngữ lớn đa phương thức cho hỗ trợ quyết định lái xe
 
-Các công trình ứng dụng mô hình ngôn ngữ lớn đa phương thức cho lái xe có thể chia thành ba nhóm theo mức độ tích hợp với vòng lặp điều khiển, tổng hợp ở Bảng 2.1, trước khi đi vào phân tích chi tiết từng nhóm.
-
-**Bảng 2.1.** Tổng hợp các công trình liên quan về LLM/VLM cho lái xe.
-
-| Nhóm | Công trình | Đặc điểm kỹ thuật chính | Kết quả nổi bật đã công bố |
-|---|---|---|---|
-| End-to-end quy mô lớn | DriveGPT4 [2] | Sinh giải thích ngôn ngữ tự nhiên kèm tín hiệu điều khiển, huấn luyện end-to-end | — |
-| | DriveLM [3] | Đóng khung lái xe dưới dạng Graph Visual Question Answering | — |
-| | LMDrive [4] | Lái xe closed-loop end-to-end bằng LLM | — |
-| Tầng tương tác/suy luận gắn thêm | Drive as You Speak [22] | LLM tool-use, suy luận reasoning-acting, tương tác cá nhân hóa | — |
-| | DriveVLM [23] | Kiến trúc lai DriveVLM-Dual: VLM + pipeline truyền thống cho suy luận không gian | Kiểm chứng trên nuScenes + triển khai thực tế |
-| | Mô hình ngôn ngữ nhẹ confidence-aware [24] | Chưng cất từ hệ đa-agent, có nhận biết độ tin cậy | SOTA trên benchmark nuPlan, độ trễ thấp |
-| | Talk2BEV [25] | VLM trên biểu diễn bird's-eye-view, không huấn luyện riêng từng tác vụ | Talk2BEV-Bench, >20.000 câu hỏi trên nuScenes |
-| Hybrid deep learning + MLLM | SafeRoute [11] / Advancing-AV-Intelligence [12] | Multimodal Adapter dung hợp đặc trưng CNN với embedding EVA-CLIP | ResNet-50 99,8% / YOLOv8 98,0% / RT-DETR 96,6% (biển báo); Question Overall Accuracy 82,83% (làn đường) |
-| | DSC-LLM [13] | Đặc trưng hành vi (LSTM/transformer) + ngữ cảnh ảnh, dự đoán quỹ đạo | — |
-
 **Tiền thân trước kỷ nguyên LLM.** Hong và cộng sự [10] đã đặt nền móng cho ý tưởng mã hóa ngữ nghĩa cấp cao của tình huống giao thông thành một biểu diễn có cấu trúc (dạng lưới không gian) để mô hình học sâu suy luận hành vi lái xe. Công trình này dùng mạng convolutional thuần túy, phù hợp với công cụ AI sẵn có tại thời điểm công bố; hạn chế duy nhất là chưa sinh được giải thích bằng ngôn ngữ tự nhiên — điều mà các mô hình ngôn ngữ lớn ra đời sau đó mới giải quyết được.
 
-**Các hệ VLM/LLM lái xe end-to-end quy mô lớn.** Với sự xuất hiện của các mô hình ngôn ngữ lớn đa phương thức, một hướng nghiên cứu tích cực đã hình thành nhằm tích hợp trực tiếp khả năng suy luận ngôn ngữ vào pipeline lái xe end-to-end — tiêu biểu là DriveGPT4 [2], DriveLM [3] và LMDrive [4] (Bảng 2.1). Các hệ này đạt được khả năng diễn giải tích hợp sâu ngay trong vòng lặp điều khiển, đổi lại đòi hỏi huấn luyện hoặc tinh chỉnh trên tập dữ liệu lái xe quy mô lớn (nuScenes, CARLA...) cùng hạ tầng tính toán và dữ liệu đáng kể — một yêu cầu tài nguyên vượt quá quy mô khả thi của một đề tài nghiên cứu độc lập như đề tài này.
+**Các hệ VLM/LLM lái xe end-to-end quy mô lớn.** Với sự xuất hiện của các mô hình ngôn ngữ lớn đa phương thức, một hướng nghiên cứu tích cực đã hình thành nhằm tích hợp trực tiếp khả năng suy luận ngôn ngữ vào pipeline lái xe end-to-end. DriveGPT4 [2] sinh giải thích ngôn ngữ tự nhiên kèm dự đoán tín hiệu điều khiển theo hướng end-to-end; DriveLM [3] đóng khung bài toán lái xe dưới dạng Graph Visual Question Answering; LMDrive [4] thực hiện lái xe closed-loop end-to-end bằng LLM. Các hệ này đạt được khả năng diễn giải tích hợp sâu ngay trong vòng lặp điều khiển, đổi lại đòi hỏi huấn luyện hoặc tinh chỉnh trên tập dữ liệu lái xe quy mô lớn (nuScenes, CARLA...) cùng hạ tầng tính toán và dữ liệu đáng kể — một yêu cầu tài nguyên vượt quá quy mô khả thi của một đề tài nghiên cứu độc lập như đề tài này.
 
-**Các hệ LLM/VLM đóng vai trò tầng tương tác/suy luận gắn thêm.** Song song với hướng end-to-end nêu trên, một nhóm công trình gần đây dùng LLM/VLM như một tầng suy luận hoặc tương tác gắn thêm vào pipeline lái xe sẵn có — Drive as You Speak [22], DriveVLM [23], mô hình ngôn ngữ nhẹ confidence-aware [24], và Talk2BEV [25] (Bảng 2.1) — gần với cách tiếp cận kỹ thuật của đề tài này hơn. Đáng chú ý, DriveVLM [23] thừa nhận rõ hạn chế của VLM thuần túy về suy luận không gian nên phải kết hợp với một pipeline truyền thống để bù đắp — một quan sát tương đồng với phát hiện ở mục 4.8 của đề tài này, nơi VLM tự nhận diện làn đường kém chính xác hơn pipeline chuyên biệt khi ảnh có vạch kẻ rõ. Yao và cộng sự [24] giải quyết bài toán chi phí suy luận — một ràng buộc quan trọng cho triển khai thời gian thực mà đề tài này chưa tối ưu (mục 5.3) — bằng cách chưng cất (distill) một mô hình ngôn ngữ nhẹ có nhận biết độ tin cậy từ một hệ đa-agent.
+**Các hệ LLM/VLM đóng vai trò tầng tương tác/suy luận gắn thêm.** Song song với hướng end-to-end nêu trên, một nhóm công trình gần đây dùng LLM/VLM như một tầng suy luận hoặc tương tác gắn thêm vào pipeline lái xe sẵn có, gần với cách tiếp cận kỹ thuật của đề tài này hơn. Cui và cộng sự [22] (Drive as You Speak) xây dựng một framework LLM có khả năng gọi công cụ (tool-use) và suy luận theo chu trình reasoning-acting, cho phép xe tương tác với người lái bằng ngôn ngữ tự nhiên một cách cá nhân hóa và liên tục học hỏi. Tian và cộng sự [23] (DriveVLM) đề xuất kiến trúc lai DriveVLM-Dual, kết hợp VLM cho suy luận cảnh phức tạp (long-tail) với pipeline lái xe truyền thống cho các tác vụ đòi hỏi suy luận không gian chính xác, và xác nhận bằng thực nghiệm trên nuScenes cùng dữ liệu triển khai thực tế rằng cách kết hợp này quản lý tốt các tình huống lái xe khó lường; quan sát của nhóm tác giả về giới hạn suy luận không gian của VLM thuần túy tương đồng với phát hiện ở mục 4.8 của đề tài này, nơi VLM tự nhận diện làn đường kém chính xác hơn pipeline chuyên biệt khi ảnh có vạch kẻ rõ. Yao và cộng sự [24] giải quyết bài toán chi phí suy luận — một ràng buộc quan trọng cho triển khai thời gian thực — bằng cách chưng cất (distill) một mô hình ngôn ngữ nhẹ có nhận biết độ tin cậy (confidence-aware) từ một hệ đa-agent, đạt trạng thái tốt nhất (SOTA) trên benchmark nuPlan với độ trễ suy luận thấp. Choudhary và cộng sự [25] (Talk2BEV) đưa mô hình thị giác–ngôn ngữ lớn vào không gian biểu diễn nhìn từ trên xuống (bird's-eye-view — BEV), cho phép truy vấn ngôn ngữ tự nhiên trực tiếp trên bản đồ BEV mà không cần huấn luyện riêng cho từng tác vụ, được kiểm chứng trên benchmark Talk2BEV-Bench với hơn 20.000 câu hỏi trên dữ liệu nuScenes — một quy mô kiểm chứng lớn hơn đáng kể so với N=200 của đề tài này.
 
-Bốn công trình trên đặt trọng tâm vào những mục tiêu khác với câu hỏi nghiên cứu cốt lõi của đề tài này: cải thiện khả năng tương tác và cá nhân hóa [22], mở rộng khả năng suy luận không gian trong tình huống phức tạp [23], tối ưu chi phí/độ trễ suy luận [24], hoặc mở rộng không gian biểu diễn sang BEV [25]. Vì trọng tâm khác nhau, câu hỏi cụ thể mà đề tài này đặt ra ở mục 4.5 — tách bạch định lượng đóng góp của thông tin có cấu trúc so với ảnh thô trong cùng một mô hình cố định — chưa được đặt ra trực tiếp trong nhóm công trình này; đây là một hướng bổ trợ mà đề tài hy vọng đóng góp thêm cho dòng nghiên cứu chung.
+Bốn công trình trên đặt trọng tâm vào những mục tiêu khác với RQ3 của đề tài này: cải thiện khả năng tương tác và cá nhân hóa [22], mở rộng khả năng suy luận không gian trong tình huống phức tạp [23], tối ưu chi phí/độ trễ suy luận [24], hoặc mở rộng không gian biểu diễn sang BEV [25]. Vì trọng tâm khác nhau, câu hỏi cụ thể mà đề tài này đặt ra ở RQ3/mục 4.5 — tách bạch định lượng đóng góp của thông tin có cấu trúc so với ảnh thô trong cùng một mô hình cố định — chưa được đặt ra trực tiếp trong nhóm công trình này; đây là một hướng bổ trợ mà đề tài hy vọng đóng góp thêm cho dòng nghiên cứu chung.
 
-**Các công trình gần nhất với đề tài.** Cùng hướng kết hợp deep learning chuyên biệt với multimodal LLM cho ngữ nghĩa giao thông, SafeRoute [11] và công trình tiền thân "Advancing Autonomous Vehicle Intelligence" [12] — của cùng một nhóm tác giả — xây dựng một pipeline thống nhất dung hợp đặc trưng CNN với embedding ngôn ngữ ở tầng biểu diễn (Bảng 2.1), đạt độ chính xác nhận diện biển báo và hiểu làn đường đều cao — cho thấy hướng dung hợp thông tin ở tầng embedding mang lại hiệu năng mạnh khi có đủ dữ liệu và tài nguyên để tinh chỉnh MLLM. Tương tự, DSC-LLM [13] kết hợp đặc trưng hành vi với ngữ cảnh giao thông trích xuất từ ảnh để dự đoán quỹ đạo kèm suy luận rủi ro có giải thích bằng LLM.
+**Các công trình gần nhất với đề tài.** Cùng hướng kết hợp deep learning chuyên biệt với multimodal LLM cho ngữ nghĩa giao thông, SafeRoute [11] và công trình tiền thân "Advancing Autonomous Vehicle Intelligence" [12] — của cùng một nhóm tác giả — xây dựng một pipeline thống nhất: ba kiến trúc phát hiện biển báo (ResNet-50 đạt 99,8%, YOLOv8 đạt 98,0%, RT-DETR đạt 96,6% accuracy) kết hợp với một MLLM được tinh chỉnh bằng instruction-tuning cho làn đường, sử dụng cơ chế Multimodal Adapter để dung hợp đặc trưng CNN với embedding EVA-CLIP; công trình này báo cáo Frame Overall Accuracy 53,87% và Question Overall Accuracy 82,83% cho phần hiểu làn đường dạng hỏi–đáp — mức độ chính xác nhận diện biển báo và hiểu làn đường đều cao, cho thấy hướng dung hợp thông tin ở tầng embedding mang lại hiệu năng mạnh khi có đủ dữ liệu và tài nguyên để tinh chỉnh MLLM. Tương tự, DSC-LLM [13] kết hợp đặc trưng hành vi (mô hình hóa bằng LSTM/transformer) với ngữ cảnh giao thông trích xuất từ ảnh để dự đoán quỹ đạo kèm suy luận rủi ro có giải thích bằng LLM.
 
-Đề tài này chọn một điểm thiết kế khác cho tầng dung hợp thông tin: thay vì dung hợp ở tầng embedding như SafeRoute/Advancing-AV-Intelligence, đề tài dung hợp ở tầng prompt/văn bản — JSON ngữ nghĩa được nhúng trực tiếp vào prompt của một VLM tổng quát, không tinh chỉnh. Lựa chọn này đơn giản hơn về triển khai và không đòi hỏi dữ liệu huấn luyện MLLM riêng, đổi lại phụ thuộc nhiều hơn vào chất lượng thiết kế prompt và nhiều khả năng không đạt độ chính xác nhận diện cao bằng một mô hình được tinh chỉnh chuyên biệt như SafeRoute. Ngoài khác biệt kiến trúc, mục tiêu chính của SafeRoute/Advancing-AV-Intelligence/DSC-LLM là tối đa hóa độ chính xác nhận diện và dự đoán quỹ đạo, nên các công trình này cũng chưa đặt trọng tâm vào việc tách bạch định lượng đóng góp của thông tin có cấu trúc so với ảnh thô (câu hỏi nghiên cứu cốt lõi, mục 4.5), hay kiểm chứng độ tin cậy của phương pháp đánh giá bằng đối chiếu với con người (mục 4.6) — hai khía cạnh là trọng tâm phương pháp luận riêng của đề tài này.
+Đề tài này chọn một điểm thiết kế khác cho tầng dung hợp thông tin: thay vì dung hợp ở tầng embedding như SafeRoute/Advancing-AV-Intelligence, đề tài dung hợp ở tầng prompt/văn bản — JSON ngữ nghĩa được nhúng trực tiếp vào prompt của một VLM tổng quát, không tinh chỉnh. Lựa chọn này đơn giản hơn về triển khai và không đòi hỏi dữ liệu huấn luyện MLLM riêng, đổi lại phụ thuộc nhiều hơn vào chất lượng thiết kế prompt và nhiều khả năng không đạt độ chính xác nhận diện cao bằng một mô hình được tinh chỉnh chuyên biệt như SafeRoute. Ngoài khác biệt kiến trúc, mục tiêu chính của SafeRoute/Advancing-AV-Intelligence/DSC-LLM là tối đa hóa độ chính xác nhận diện và dự đoán quỹ đạo, nên các công trình này cũng chưa đặt trọng tâm vào việc tách bạch định lượng đóng góp của thông tin có cấu trúc so với ảnh thô (RQ3/mục 4.5), hay kiểm chứng độ tin cậy của phương pháp đánh giá bằng đối chiếu với con người (mục 4.6) — hai khía cạnh là trọng tâm phương pháp luận riêng của đề tài này.
 
 Nhìn chung, đề tài này khác về trọng tâm thiết kế so với cả hai nhóm công trình liên quan nêu trên: thay vì huấn luyện hoặc tinh chỉnh một mô hình chuyên biệt ở tầng suy luận, đề tài tận dụng một VLM tổng quát đã huấn luyện sẵn, không tinh chỉnh (truy cập qua API theo chuẩn OpenAI-compatible của NVIDIA NIM), kết hợp với một tầng tiền xử lý ngữ nghĩa từ các mô-đun perception chuyên biệt — trong đó UFLD-v2 được dùng nguyên trạng ở dạng pretrained, còn YOLOv8n cho bài toán biển báo được tự tinh chỉnh trên TT100K (mục 3.2), một bước huấn luyện quy mô nhẹ so với việc huấn luyện lại một VLM/LLM hay thu thập dữ liệu lái xe quy mô lớn như ở các hệ end-to-end. Sự đánh đổi này mang lại tính đơn giản, chi phí thấp và khả năng triển khai nhanh, phù hợp với quy mô một đề tài nghiên cứu độc lập — dù có thể đổi lại một phần độ chính xác so với các hệ được huấn luyện/tinh chỉnh chuyên biệt với đầy đủ tài nguyên.
 
@@ -312,26 +287,20 @@ Năm hướng nghiên cứu liên quan để lại các khoảng trống khác n
 
 Trước khi trình bày chi tiết từng thành phần, phần mở đầu này phát biểu hình thức bài toán ngữ nghĩa làn đường mà đề tài giải quyết, làm cơ sở thống nhất ký hiệu cho toàn bộ chương.
 
-**Đầu vào.** Đơn vị xử lý của toàn bộ pipeline là một ảnh dashcam rời rạc $I$ — một khung hình tĩnh trích từ video hành trình hoặc chụp trực tiếp, không phải một luồng video được xử lý liên tục theo thời gian: hệ thống xử lý từng ảnh độc lập, không sử dụng thông tin từ khung hình trước hay sau. $I$ là ảnh màu 3 kênh (RGB); kích thước $\text{image\_width} \times \text{image\_height}$ thay đổi theo nguồn dữ liệu (1640×590 với CULane, 1280×720 với bộ real-life — mục 3.2).
-
-Mô hình phát hiện làn đường UFLD-v2 nhận $I$ làm đầu vào và trả về một tập đường biên $B = \{b_1, b_2, \ldots, b_n\}$, mỗi đường biên $b_i$ là một danh sách điểm ảnh $\{(x, y)\}$ dọc theo vạch kẻ quan sát được — đây là đầu ra thô, cấp điểm ảnh, chưa mang ngữ nghĩa quyết định. **Nhiệm vụ** của tầng phân tích ngữ nghĩa (mục 3.3) là ánh xạ tập đường biên thô $B$ này thành một bộ ngữ nghĩa cấp quyết định $S = (\ell, o, c, N)$, trong đó:
+Cho một ảnh dashcam đầu vào $I$ có kích thước $\text{image\_width} \times \text{image\_height}$, mô hình phát hiện làn đường UFLD-v2 trả về một tập đường biên $B = \{b_1, b_2, \ldots, b_n\}$, mỗi đường biên $b_i$ là một danh sách điểm ảnh $\{(x, y)\}$ dọc theo vạch kẻ quan sát được. Nhiệm vụ của tầng phân tích ngữ nghĩa (mục 3.3) là ánh xạ tập đường biên thô $B$ này thành một bộ ngữ nghĩa cấp quyết định $S = (\ell, o, c, N)$, trong đó:
 
 - $\ell$ (ego lane) — cặp đường biên $(b_i, b_{i+1}) \subset B$ xác định làn xe đang di chuyển, kèm độ tin cậy;
 - $o$ (vehicle offset) — độ lệch $\Delta x$ giữa tâm làn ego và tâm ảnh, biểu diễn dưới dạng pixel và phần trăm bề rộng làn;
 - $c$ (road shape) — phân loại hình dạng đường tổng thể (`straight`/`gentle`/`sharp`) kèm hướng cong;
 - $N$ — số làn lân cận bên trái/phải làn ego.
 
-Song song, mô hình phát hiện biển báo YOLOv8n nhận $I$ làm đầu vào, trả về tập $D = \{(cls_j, box_j)\}$ gồm nhãn lớp và tọa độ khung bao của từng biển báo phát hiện được.
-
-**Về định dạng biểu diễn.** Bộ ngữ nghĩa $S$ và tập $D$ tự thân là các cấu trúc dữ liệu trừu tượng — một tập giá trị và nhãn — không gắn với bất kỳ định dạng tuần tự hóa (serialization) cụ thể nào. Để đưa được vào ngữ cảnh văn bản của một mô hình ngôn ngữ, $S$ và $D$ cần được **hiện thực hóa** thành một chuỗi ký tự có cấu trúc; đề tài chọn **JSON** làm định dạng hiện thực hóa (mục 3.4), vì đây là định dạng xuất hiện phổ biến trong dữ liệu huấn luyện của phần lớn LLM/VLM hiện nay (mô hình đã "quen" cú pháp này) và có overhead token thấp hơn các định dạng đánh dấu khác như XML. Về nguyên tắc, $S$ và $D$ có thể được hiện thực hóa bằng bất kỳ định dạng có cấu trúc nào khác (YAML, XML, hay một đoạn văn bản mô tả theo mẫu cố định) mà không thay đổi bản chất phương pháp — JSON là một lựa chọn triển khai, không phải một yêu cầu bắt buộc của phương pháp luận đề xuất.
-
-Bộ ngữ nghĩa $S$ và tập $D$, sau khi chuẩn hóa thành hai biểu diễn JSON — đầy đủ và rút gọn (mục 3.4) — làm đầu vào cho tầng suy luận: một mô hình ngôn ngữ lớn đa phương thức $M$ nhận ảnh $I$ và/hoặc JSON ngữ nghĩa, sinh khuyến nghị lái xe $R$ dưới dạng văn bản tự nhiên có cấu trúc ba phần (mục 3.5). Câu hỏi nghiên cứu cốt lõi (mục 1.4) chính là so sánh định lượng chất lượng của $R$ khi $M$ lần lượt nhận $(I)$, $(S)$, hay $(I, S)$ làm đầu vào.
+Song song, mô hình phát hiện biển báo YOLOv8n trả về tập $D = \{(cls_j, box_j)\}$ gồm nhãn lớp và tọa độ khung bao của từng biển báo phát hiện được. Bộ ngữ nghĩa $S$ và tập $D$ sau đó được chuẩn hóa thành hai biểu diễn JSON — đầy đủ và rút gọn (mục 3.4) — làm đầu vào cho tầng suy luận: một mô hình ngôn ngữ lớn đa phương thức $M$ nhận ảnh $I$ và/hoặc JSON ngữ nghĩa, sinh khuyến nghị lái xe $R$ dưới dạng văn bản tự nhiên có cấu trúc ba phần (mục 3.5). RQ3 (mục 1.4) — câu hỏi nghiên cứu trung tâm của đề tài — chính là so sánh định lượng chất lượng của $R$ khi $M$ lần lượt nhận $(I)$, $(S)$, hay $(I, S)$ làm đầu vào.
 
 Các mục 3.1–3.7 tiếp theo trình bày chi tiết từng thành phần của pipeline theo đúng thứ tự xử lý: kiến trúc tổng thể, dữ liệu, thuật toán suy ra $S$ từ $B$ (mục 3.3), cấu trúc JSON cụ thể (mục 3.4), thiết kế prompt sinh $R$ (mục 3.5), lựa chọn mô hình $M$ (mục 3.6), và phương pháp luận đánh giá $R$ (mục 3.7).
 
 ## 3.1. Kiến trúc hệ thống tổng thể
 
-Pipeline của đề tài gồm bốn tầng xử lý tuần tự, minh họa ở Hình 3.1. Tên tiếng Anh trong ngoặc ở mỗi tầng là thuật ngữ chuẩn được dùng thống nhất xuyên suốt luận văn.
+Pipeline của đề tài gồm bốn tầng xử lý tuần tự, minh họa ở Hình 3.1.
 
 **Hình 3.1.** Kiến trúc tổng thể của pipeline bốn tầng.
 
@@ -339,32 +308,21 @@ Pipeline của đề tài gồm bốn tầng xử lý tuần tự, minh họa �
 Ảnh dashcam
     │
     ▼
-[1. TẦNG NHẬN THỨC (Perception)]  UFLD-v2 (làn đường) + YOLOv8/TT100K (biển báo)
+[1. PERCEPTION]  UFLD-v2 (làn đường) + YOLOv8/TT100K (biển báo)
     │
     ▼
-[2. TẦNG PHÂN TÍCH NGỮ NGHĨA (Semantic Analysis)]  Chuyển tọa độ thô → ngữ nghĩa
-                          (số làn, làn ego, độ lệch tâm, làn lân cận, hình dạng đường)
-                          → JSON đầy đủ + JSON rút gọn
+[2. SEMANTIC ANALYSIS]  Chuyển tọa độ thô → ngữ nghĩa (số làn, làn ego, độ lệch tâm,
+                          làn lân cận, hình dạng đường) → JSON đầy đủ + JSON rút gọn
     │
     ▼
-[3. TẦNG SUY LUẬN (LLM Reasoning)]  VLM (qua NVIDIA NIM API) sinh khuyến nghị lái xe
-                      bằng ngôn ngữ tự nhiên - 3 chế độ input độc lập: chỉ ảnh /
+[3. LLM REASONING]  VLM (qua NVIDIA NIM API) sinh khuyến nghị lái xe bằng
+                      ngôn ngữ tự nhiên - 3 chế độ input độc lập: chỉ ảnh /
                       chỉ JSON / ảnh + JSON
     │
     ▼
-[4. TẦNG ĐÁNH GIÁ (Evaluation)]  LLM-as-a-judge (6 tiêu chí) + kiểm chứng độ tin cậy
-                   bằng người và đa-judge
+[4. EVALUATION]  LLM-as-a-judge (6 tiêu chí) + kiểm chứng độ tin cậy bằng
+                   người và đa-judge
 ```
-
-**Mô hình sử dụng ở tầng nhận thức.** Tầng đầu tiên gồm hai mô hình phát hiện chuyên biệt, độc lập với nhau, chạy song song trên cùng một ảnh đầu vào $I$:
-
-- *Phát hiện làn đường*: UFLD-v2, backbone ResNet-34, dùng nguyên bản pretrained trên CULane (`culane_res34.pth`), không tinh chỉnh thêm — đúng định hướng training-free được áp dụng cho cả tầng nhận thức lẫn tầng suy luận, ngoại trừ một bước tinh chỉnh nhẹ duy nhất nêu dưới đây.
-- *Phát hiện biển báo*: YOLOv8n (biến thể nhỏ nhất trong họ YOLOv8, khoảng 3,2 triệu tham số), được tự tinh chỉnh (fine-tune) trên tập con 50 lớp phổ biến của TT100K, khởi tạo từ checkpoint YOLOv8n gốc (pretrained trên COCO). Cấu hình huấn luyện:
-  - Độ phân giải ảnh đầu vào: 640×640; batch size tự động (`batch=-1`).
-  - Bộ tối ưu SGD, learning rate khởi tạo `lr0=0,01`, momentum `0,937`, weight decay `0,0005`, warm-up 3 epoch.
-  - Tối đa 100 epoch, cơ chế dừng sớm `patience=30` (dừng nếu không cải thiện sau 30 epoch liên tiếp).
-
-  Do giới hạn thời gian phiên làm việc của môi trường huấn luyện (Kaggle), quá trình bị ngắt giữa chừng ở epoch 82 và được chạy tiếp (resume) từ checkpoint gần nhất cho tới khi hoàn tất. Đây là một bước tinh chỉnh tiêu chuẩn, quy mô nhẹ so với việc huấn luyện hoặc tinh chỉnh một VLM/LLM trên dữ liệu lái xe quy mô lớn như ở các hệ end-to-end được khảo sát ở mục 2.3 (DriveGPT4, DriveLM, LMDrive, SafeRoute) — không mâu thuẫn với định hướng training-free của đề tài, vốn chỉ áp dụng cho riêng tầng suy luận VLM (mục 3.6), không áp dụng cho tầng nhận thức.
 
 ## 3.2. Dữ liệu
 
@@ -372,59 +330,57 @@ Pipeline của đề tài gồm bốn tầng xử lý tuần tự, minh họa �
 
 **Bộ dữ liệu kiểm chứng độc lập (real-life).** 200 khung hình được trích xuất từ video dashcam thực tế (độ phân giải 1280×720), gán nhãn thủ công theo cùng schema như trên. Mục đích của bộ dữ liệu này là kiểm chứng khả năng tổng quát hóa của hệ thống trên dữ liệu hoàn toàn độc lập với dữ liệu huấn luyện của mô hình phát hiện làn đường (thảo luận về rủi ro data leakage được trình bày ở mục 4.7).
 
+**Mô hình phát hiện làn đường.** UFLD-v2, backbone ResNet-34, pretrained trên CULane (`culane_res34.pth`).
+
+**Mô hình phát hiện biển báo.** YOLOv8n (biến thể nhỏ nhất trong họ YOLOv8, khoảng 3,2 triệu tham số), được tự tinh chỉnh (fine-tune) trên tập con 50 lớp phổ biến của TT100K, khởi tạo từ checkpoint YOLOv8n gốc (pretrained trên COCO). Cấu hình huấn luyện:
+
+- Độ phân giải ảnh đầu vào: 640×640; batch size tự động (`batch=-1`).
+- Bộ tối ưu SGD, learning rate khởi tạo `lr0=0,01`, momentum `0,937`, weight decay `0,0005`, warm-up 3 epoch.
+- Tối đa 100 epoch, cơ chế dừng sớm `patience=30` (dừng nếu không cải thiện sau 30 epoch liên tiếp).
+
+Do giới hạn thời gian phiên làm việc của môi trường huấn luyện (Kaggle), quá trình bị ngắt giữa chừng ở epoch 82 và được chạy tiếp (resume) từ checkpoint gần nhất cho tới khi hoàn tất. Đây là một bước tinh chỉnh tiêu chuẩn, quy mô nhẹ so với việc huấn luyện hoặc tinh chỉnh một VLM/LLM trên dữ liệu lái xe quy mô lớn như ở các hệ end-to-end được khảo sát ở mục 2.3 (DriveGPT4, DriveLM, LMDrive, SafeRoute) — không mâu thuẫn với định hướng training-free của đề tài, vốn chỉ áp dụng cho riêng tầng suy luận VLM (mục 3.6), không áp dụng cho tầng perception.
+
 ## 3.3. Phân tích ngữ nghĩa làn đường
 
 Đây là tầng xử lý do tác giả tự thiết kế và cài đặt, chuyển đổi danh sách điểm ảnh thô của từng đường biên (do UFLD-v2 trả về) thành bốn ngữ nghĩa cấp quyết định: làn ego, độ lệch tâm xe, hình dạng đường, và làn lân cận — cấu thành đóng góp 1 của đề tài (mục 1.5).
 
 ### Tiền xử lý: sắp xếp đường biên theo vị trí thực tế
 
-**Đầu vào và đầu ra.** Đầu vào của bước này là tập đường biên thô $B = \{b_1, \ldots, b_n\}$ do UFLD-v2 trả về, theo thứ tự nội bộ của mô hình — thứ tự chỉ số này được UFLD-v2 gán cố định theo kiến trúc mạng (mỗi chỉ số ứng với một "lane slot" cố định của mô hình), không đảm bảo tương ứng với thứ tự trái–phải thực tế trên ảnh. Vì bước xác định làn ego ngay sau đây (mục kế tiếp) hoạt động bằng cách so sánh các cặp đường biên *liền kề về vị trí không gian*, danh sách $B$ bắt buộc phải được sắp xếp lại theo tọa độ x trước khi xử lý tiếp. Đầu ra của bước này là một danh sách đường biên đã sắp xếp trái sang phải theo tọa độ x thực tế, cùng ánh xạ giữa chỉ số gốc do UFLD-v2 gán (`original_index`) và chỉ số sau khi sắp xếp (`sorted_index`) — danh sách này là đầu vào trực tiếp cho bước xác định làn ego.
-
-**Cách sắp xếp.** Việc sắp xếp dựa trên tọa độ x của mỗi đường biên tại một hàng ảnh tham chiếu duy nhất, để mọi đường biên được so sánh tại cùng một độ sâu ảnh:
+UFLD-v2 không đảm bảo trả về các đường biên theo đúng thứ tự trái–phải trên ảnh. Do đó, trước khi xác định làn ego, các đường biên được sắp xếp lại theo tọa độ x tại một hàng ảnh tham chiếu gần đáy ảnh:
 
 $$y_{ref} = 0{,}95 \times \text{image\_height}$$
 
-Hệ số 0,95 không phải một giá trị hiệu chỉnh bằng số liệu thực nghiệm, mà là một lựa chọn thực tế dựa trên đặc điểm hình học của ảnh dashcam: đây là hàng ảnh gần đáy ảnh nhất mà dashcam vẫn còn quan sát được mặt đường (các hàng sát đáy hơn thường bị nắp capo xe che khuất), đồng thời là vùng ảnh gần camera nhất nên đường biên ít bị che khuất hoặc đứt đoạn nhất — tăng khả năng UFLD-v2 đã phát hiện đủ điểm tại đó.
-
-Tọa độ x tại $y_{ref}$ được nội suy bằng trung bình các điểm của đường biên trong khoảng $|y - y_{ref}| \le 30$ pixel; nếu không có điểm nào đủ gần (đường biên bị che khuất hoặc kết thúc sớm trước khi tới $y_{ref}$), tọa độ được ngoại suy bằng fit bậc 1 qua toàn bộ điểm sẵn có của đường biên đó. Cách này thay thế một phiên bản trước đó, vốn gán tạm $+\infty$ khi thiếu điểm gần — khiến đường biên luôn bị đẩy về cuối danh sách sắp xếp (tương đương bị coi là ở rìa phải ảnh) bất kể vị trí thực tế, làm sai phân loại làn lân cận trái/phải.
+Tọa độ x tại $y_{ref}$ được nội suy bằng trung bình các điểm trong khoảng $|y - y_{ref}| \le 30$ pixel; nếu không có điểm nào đủ gần (đường biên bị che khuất hoặc kết thúc sớm), tọa độ được ngoại suy bằng fit bậc 1 qua toàn bộ điểm sẵn có của đường biên. Cách này thay thế một phiên bản trước đó, vốn gán tạm $+\infty$ khi thiếu điểm gần và khiến đường biên bị đẩy sai lệch về bên phải, làm sai phân loại làn lân cận trái/phải.
 
 ### Xác định làn ego
 
-**Giả thiết nền tảng.** Toàn bộ thuật toán xác định làn ego — và mục "Độ lệch tâm xe" ngay sau đây — dựa trên một giả thiết về vị trí lắp đặt camera, cần được phát biểu tường minh vì mọi tính toán phía sau đều phụ thuộc vào nó: **dashcam được giả định lắp đặt tại vị trí chính giữa theo chiều ngang của xe** (ví dụ gắn trên kính chắn gió gần gương chiếu hậu trung tâm — cách lắp phổ biến nhất với dashcam tiêu dùng), không lệch trái/phải. Với giả thiết này, tâm ảnh theo chiều ngang được dùng làm xấp xỉ cho vị trí thực tế của xe trên đường:
+Với $n$ đường biên đã sắp xếp trái sang phải và $x_{veh} = \text{image\_width}/2$ (giả định camera gắn tâm xe), thuật toán tính điểm cho mỗi cặp đường biên kề nhau $(i, i+1)$:
 
-$$x_{veh} = \text{image\_width}/2$$
+$$\text{score}_i = \left| \frac{x_i + x_{i+1}}{2} - x_{veh} \right| \times p_{between} \times \left(1 + 0{,}2 \times \frac{|w_i - w_{exp}|}{w_{exp}}\right)$$
 
-Đây là một giả thiết đơn giản hóa bắt buộc: hệ thống không có dữ liệu hiệu chỉnh camera (calibration) hay thông số lắp đặt thực tế cho từng nguồn ảnh (CULane, real-life), nên không thể tính offset thật của camera so với tâm xe. Với ảnh mà camera lệch tâm đáng kể so với giả thiết này, độ lệch tâm xe suy ra được sẽ mang sai số hệ thống theo đúng chiều lệch của camera — hạn chế này được ghi nhận lại ở mục 5.3.
+trong đó $w_i = x_{i+1} - x_i$ là bề rộng cặp làn, $w_{exp} = 0{,}15 \times \text{image\_width}$ là bề rộng làn "điển hình" giả định, và
 
-**Trực giác của thuật toán.** Với $n$ đường biên đã sắp xếp trái sang phải, làn ego là cặp đường biên liền kề bao quanh $x_{veh}$ hợp lý nhất. Coi mỗi cặp đường biên kề nhau $(b_i, b_{i+1})$ là một "khe" — thuật toán duyệt qua tất cả các khe và tính một điểm phạt cho từng khe (khe nào điểm phạt thấp nhất được chọn làm làn ego):
+$$
+p_{between} = \begin{cases} 0{,}5 & \text{nếu xe nằm giữa hai đường biên} \\ 1 & \text{ngược lại} \end{cases}
+$$
 
-$$\text{score}_i = \underbrace{\left| \frac{x_i + x_{i+1}}{2} - x_{veh} \right|}_{\text{(a) khoảng cách tâm khe} \to \text{tâm xe}} \times \underbrace{p_{between}}_{\text{(b) ưu tiên khe chứa xe}} \times \underbrace{\left(1 + 0{,}2 \times \frac{|w_i - w_{exp}|}{w_{exp}}\right)}_{\text{(c) phạt bề rộng bất thường}}$$
+Cặp có $\text{score}_i$ nhỏ nhất được chọn làm làn ego — chọn động theo từng ảnh thay vì giả định vị trí cố định, chấp nhận cả trường hợp bất đối xứng (đường cong, hoặc thiếu đường biên ở một phía).
 
-- **(a) Khoảng cách tâm khe đến tâm xe** — $\left|\frac{x_i+x_{i+1}}{2} - x_{veh}\right|$: thành phần chính. Khe nào có điểm giữa gần $x_{veh}$ nhất thì càng có khả năng là làn ego.
-- **(b) Ưu tiên khe thực sự chứa $x_{veh}$** — hệ số $p_{between}$ bằng 0,5 nếu $x_{veh}$ nằm giữa $x_i$ và $x_{i+1}$ (xe "đứng trong" khe này), và bằng 1 nếu $x_{veh}$ nằm ngoài khe. Vì $\text{score}_i$ càng thấp càng được ưu tiên, nhân với 0,5 làm giảm điểm phạt của khe chứa xe thật sự xuống còn một nửa — đảm bảo khe đó luôn được xếp trước các khe không chứa xe khi (a) xấp xỉ bằng nhau giữa các khe. Giá trị 0,5 chỉ mang vai trò xếp hạng ưu tiên tương đối, là một lựa chọn thiết kế thực tế để tránh chọn nhầm sang khe liền kề, không phải một xác suất hay tham số được hiệu chỉnh bằng số liệu.
-- **(c) Phạt bề rộng bất thường** — $w_i = x_{i+1}-x_i$ là bề rộng thực của khe, đối chiếu với bề rộng làn "điển hình" giả định $w_{exp} = 0{,}15 \times \text{image\_width}$ (ước lượng thực tế theo tỉ lệ bề rộng làn đường thường chiếm trong ảnh dashcam ở góc chụp tiêu chuẩn của CULane và bộ real-life, không phải một giá trị đo thống kê chính thức). Khe có bề rộng lệch nhiều so với $w_{exp}$ — thường do một đường biên bị phát hiện sai — bị phạt thêm theo hệ số 0,2; trọng số này được chọn qua thử nghiệm để (c) chỉ đóng vai trò điều chỉnh phụ, chỉ đủ mạnh để phá vỡ thứ hạng khi bề rộng khe sai lệch rõ rệt, không lấn át vai trò chính của (a).
-
-Khe có $\text{score}_i$ nhỏ nhất được chọn làm làn ego. Cách tính điểm động theo từng ảnh (thay vì giả định làn ego luôn nằm ở một vị trí cố định, ví dụ luôn là cặp đường biên thứ 2–3) cho phép xử lý cả trường hợp bất đối xứng: đường cong khiến khoảng cách giữa các đường biên không đều, hoặc UFLD-v2 chỉ phát hiện được đường biên ở một phía.
-
-**Độ tin cậy.** Được suy trực tiếp từ khoảng cách $d$ giữa tâm làn ego đã chọn và tâm ảnh ($w$ = image_width), không suy trực tiếp từ $\text{score}_i$ (vốn không có thang đo cố định để diễn giải thành xác suất):
+Độ tin cậy được suy trực tiếp từ khoảng cách $d$ giữa tâm làn ego và tâm ảnh ($w$ = image_width):
 
 | Điều kiện | $d < 0{,}1w$ | $d < 0{,}25w$ | $d < 0{,}4w$ | còn lại |
 |---|---|---|---|---|
 | Độ tin cậy | 0,95 | 0,8 | 0,6 | 0,4 |
 
-Bốn ngưỡng 0,1w/0,25w/0,4w và bốn mức độ tin cậy tương ứng là các mốc phân đoạn thực tế, không phải phân vị đo được từ dữ liệu — phản ánh trực giác rằng làn ego lệch tâm dưới 10% bề rộng ảnh gần như chắc chắn đúng, trong khi lệch tới 40% vẫn được chấp nhận nhưng ở độ tin cậy thấp, vì ở mức lệch lớn như vậy khả năng UFLD-v2 đã bỏ sót một đường biên gần tâm ảnh hơn tăng lên đáng kể.
-
 Trường hợp chỉ phát hiện một đường biên ($n=1$): đường biên đó được gán làm ranh giới phải của làn ego, độ tin cậy cố định 0,5.
 
 ### Độ lệch tâm xe (vehicle offset)
 
-Với tâm làn ego $x_{lane} = (x_{left} + x_{right})/2$ và $x_{veh}$ theo giả thiết camera gắn tâm xe (mục trên), độ lệch tâm xe được tính theo hai đơn vị song song — pixel tuyệt đối và phần trăm bề rộng làn:
+Với tâm làn ego $x_{lane} = (x_{left} + x_{right})/2$:
 
 $$\Delta x = x_{veh} - x_{lane} \quad \text{(pixel)}, \qquad \Delta x_{\%} = \frac{\Delta x}{w} \times 100$$
 
-trong đó $w$ là bề rộng làn ego. Phép nhân với 100 ở $\Delta x_\%$ không phải một hằng số cần hiệu chỉnh — đây thuần túy là bước chuyển đổi tỉ lệ $\Delta x/w \in [-1,1]$ sang đơn vị phần trăm, giúp con số dễ diễn giải hơn khi trình bày và khi đưa vào JSON/prompt (mục 3.4–3.5).
-
-Ngưỡng "centered" ($|\Delta x| < 10$ pixel) là một dung sai thực tế, không phải giá trị hiệu chỉnh bằng số liệu đo: ở độ phân giải của hai bộ dữ liệu sử dụng (1640×590 với CULane, 1280×720 với real-life), 10 pixel tương ứng khoảng 0,6–0,8% bề rộng ảnh — đủ nhỏ để nằm trong biên độ dao động tự nhiên của việc phát hiện đường biên giữa các khung hình, nên được coi là "không lệch đáng kể" thay vì đòi hỏi $\Delta x = 0$ tuyệt đối, một điều kiện phi thực tế đối với dữ liệu ảnh thật. Hướng lệch được gán "lệch phải" nếu $\Delta x > 0$, "lệch trái" nếu ngược lại.
+trong đó $w$ là bề rộng làn ego. Gán "centered" nếu $|\Delta x| < 10$ pixel, "lệch phải" nếu $\Delta x > 0$, "lệch trái" nếu ngược lại.
 
 ### Ước lượng độ cong
 
@@ -438,13 +394,13 @@ $$\text{drift\_ratio} = \frac{\sqrt{\text{MSE}_1}}{\text{image\_width}}, \qquad 
 
 $$y_{horizon} = 0{,}3 \times \text{image\_height}$$
 
-thay vì ngoại suy riêng tại $y_{norm}=0$ của từng đường biên như thiết kế ban đầu — cách cũ khiến hai đường biên thẳng song song có thể cho hai điểm hội tụ khác nhau (do được đánh giá ở hai độ sâu ảnh khác nhau), phóng đại sai độ phân tán điểm hội tụ dù đường thực sự thẳng. Neo về cùng một hàng ảnh khắc phục sai lệch này. Mốc 0,3 là một lựa chọn thực tế xấp xỉ vị trí đường chân trời thường thấy trong ảnh dashcam gắn ở độ cao mắt người lái, không phải giá trị đo trực tiếp từ dữ liệu; vai trò của nó chỉ là một mốc *dùng chung* cố định để mọi đường biên được so sánh công bằng, không nhằm mô phỏng đúng vị trí chân trời vật lý của từng ảnh cụ thể.
+thay vì ngoại suy riêng tại $y_{norm}=0$ của từng đường biên như thiết kế ban đầu — cách cũ khiến hai đường biên thẳng song song có thể cho hai điểm hội tụ khác nhau (do được đánh giá ở hai độ sâu ảnh khác nhau), phóng đại sai độ phân tán điểm hội tụ dù đường thực sự thẳng. Neo về cùng một hàng ảnh khắc phục sai lệch này.
 
-Bốn tín hiệu tổng hợp trên toàn ảnh — $\overline{\text{drift}}$, $\overline{\text{fit\_improvement}}$, tỉ lệ đường biên "thẳng" ($\text{MSE}_1 < 1000$), và hướng cong (so sánh x trung bình gần đáy ảnh với gần giữa ảnh, ngưỡng $\text{shift\_ratio}=0{,}08$ — một ngưỡng thực tế khác, chọn đủ nhỏ để phát hiện lệch trái/phải rõ rệt nhưng đủ lớn để không nhạy cảm với nhiễu phát hiện đường biên) — được dùng để phân loại hình dạng đường tổng thể.
+Bốn tín hiệu tổng hợp trên toàn ảnh — $\overline{\text{drift}}$, $\overline{\text{fit\_improvement}}$, tỉ lệ đường biên "thẳng" ($\text{MSE}_1 < 1000$), và hướng cong (so sánh x trung bình gần đáy ảnh với gần giữa ảnh, ngưỡng $\text{shift\_ratio}=0{,}08$) — được dùng để phân loại hình dạng đường tổng thể.
 
 ### Hiệu chỉnh ngưỡng phân loại độ cong
 
-Hai ngưỡng $\overline{\text{drift}}$ dưới đây là các giá trị được hiệu chỉnh bằng số liệu thực đo trên CULane, không đặt tùy ý: $\overline{\text{drift}}_{straight}=0{,}02$ (trên phân vị p95 đo được trên các ảnh đường thẳng, ≈0,014); $\overline{\text{drift}}_{sharp}=0{,}06$ (dưới giá trị đo được của một ảnh cua gắt đã xác nhận đúng, 0,0994). Ngưỡng thứ ba, $\text{fit\_improvement}=0{,}3$, có vai trò khác và mức độ căn cứ khác: đây là một lựa chọn thực tế bổ sung — không hiệu chỉnh bằng số liệu đo như hai ngưỡng $\overline{\text{drift}}$ ở trên — chỉ can thiệp để nâng hạng từ "thẳng" lên "cong nhẹ" trong dải giá trị mà $\overline{\text{drift}}$ còn quá nhỏ để tự phát hiện, nhưng bằng chứng cải thiện khi fit bậc 2 (so với bậc 1) vẫn rõ ràng. Quy tắc phân loại cuối cùng:
+Ba ngưỡng được hiệu chỉnh bằng số liệu thực đo trên CULane, không đặt tùy ý: $\overline{\text{drift}}_{straight}=0{,}02$ (trên phân vị p95 của ảnh đường thẳng, ≈0,014); $\overline{\text{drift}}_{sharp}=0{,}06$ (dưới giá trị đo của một ảnh cua gắt đã xác nhận đúng, 0,0994); $\text{fit\_improvement}=0{,}3$, dùng để nâng hạng từ "thẳng" lên "cong nhẹ" khi $\overline{\text{drift}}$ quá nhỏ để tự phát hiện nhưng bằng chứng cong vẫn rõ ràng. Quy tắc phân loại cuối cùng:
 
 $$
 \text{classification} = \begin{cases}
@@ -462,116 +418,45 @@ Bằng số đường biên phát hiện được trừ 1, theo quy ước CULan
 
 ## 3.4. Cấu trúc JSON ngữ nghĩa gửi cho LLM
 
-**JSON đầy đủ (`<tên>.json`).** Đây là output trực tiếp của tầng Semantic Analysis (mục 3.3), và cũng là bản JSON được nhúng nguyên vẹn vào prompt ở hai chế độ `json_only`/`image_json`. Bảng 3.1 liệt kê từng nhóm trường và lý do đưa vào.
+**JSON đầy đủ (`<tên>.json`).** Đây là output trực tiếp của tầng Semantic Analysis (mục 3.3), và cũng là bản JSON được nhúng nguyên vẹn vào prompt ở hai chế độ `json_only`/`image_json`. Cấu trúc gồm bốn nhóm trường:
 
-**Bảng 3.1.** Các nhóm trường trong JSON đầy đủ và lý do đưa vào.
+1. **Siêu dữ liệu**: `scene_id` (định danh phiên xử lý), `timestamp`, `image_size` (`width`, `height`).
+2. **`road`** (tổng hợp cấp đường): `road_type`, `road_environment` (ước lượng heuristic loại môi trường đường bằng quy tắc if-else đơn giản — độ tin cậy thấp, đã bị loại khỏi bản rút gọn vì lý do này), `curvature_magnitude`/`curvature_direction`/`curvature_confidence` (kết quả từ mục 3.3), và `geometry` (`spread_pixels`, `coverage_ratio`, `convergence_ratio`, `lane_count`, `geometry_type`).
+3. **`lane`** (chi tiết cấp làn, đầu ra chính của mục 3.3): `sorted_lanes` (danh sách đường biên đã sắp xếp trái sang phải); `ego_lane` (ranh giới, tâm làn, bề rộng, độ tin cậy); `lane_classification` (số lượng và danh sách làn lân cận trái/phải); `vehicle_offset` (đầy đủ các trường mô tả ở mục 3.3); `curvature` (kết quả phân loại độ cong); `lane_semantics` (ngữ nghĩa từng làn: loại, có phải làn ego không, có đi được không, vị trí tương đối); và kích thước ảnh.
+4. **`traffic_signs`**: danh sách biển báo phát hiện được kèm nhãn lớp và tọa độ, cùng số lượng.
 
-| Nhóm | Trường | Ý nghĩa | Lý do đưa vào |
-|---|---|---|---|
-| Siêu dữ liệu | `scene_id`, `timestamp` | Định danh phiên xử lý và thời điểm | Truy vết, đối chiếu khi tổng hợp kết quả hàng loạt; không phục vụ suy luận |
-| | `image_size` (`width`, `height`) | Kích thước ảnh gốc | Cho phép diễn giải đúng các giá trị pixel tuyệt đối (offset, spread...) mà không cần truy cập lại ảnh |
-| `road` | `road_type` | Loại đường | Ngữ cảnh chung cho khuyến nghị |
-| | `road_environment` | Ước lượng loại môi trường đường bằng quy tắc if-else đơn giản | Ngữ cảnh bổ sung — **đã bị loại khỏi JSON rút gọn** vì độ tin cậy thấp hơn các trường còn lại, nguy cơ khiến LLM coi là dữ kiện chắc chắn |
-| | `curvature_magnitude`/`curvature_direction`/`curvature_confidence` | Kết quả phân loại độ cong (mục 3.3) | Ngữ nghĩa cấp đường phục vụ trực tiếp RQ1 |
-| | `geometry` (`spread_pixels`, `coverage_ratio`, `convergence_ratio`, `lane_count`, `geometry_type`) | Đặc trưng hình học phụ trợ | Giữ lại làm dữ liệu chẩn đoán/tham khảo (ví dụ `spread_pixels` — độ phân tán điểm hội tụ — từng được cân nhắc làm tín hiệu phân loại độ cong nhưng bị loại vì không ổn định giữa các ảnh, mục 3.3); không được đưa vào phần diễn giải chính của prompt |
-| `lane` | `sorted_lanes` | Danh sách đường biên đã sắp xếp trái–phải | Ngữ cảnh đầy đủ về cấu trúc làn quan sát được, không chỉ riêng làn ego |
-| | `ego_lane` | Ranh giới, tâm, bề rộng, độ tin cậy làn ego | Ngữ nghĩa cốt lõi — input trực tiếp cho khuyến nghị lái xe |
-| | `lane_classification` | Số lượng, danh sách làn lân cận trái/phải | Phục vụ khuyến nghị liên quan chuyển làn |
-| | `vehicle_offset` | Độ lệch tâm xe đầy đủ (mục 3.3) | Ngữ nghĩa cốt lõi thứ hai |
-| | `curvature` | Kết quả phân loại độ cong | Lặp lại ở cấp `lane` để LLM không cần tra cứu chéo sang `road` |
-| | `lane_semantics` | Ngữ nghĩa từng làn: loại, có phải ego không, có đi được không, vị trí tương đối | Cho phép khuyến nghị liên quan đến các làn khác ngoài làn ego |
-| `traffic_signs` | danh sách biển báo + `count` | Nhãn lớp, tọa độ, số lượng | Ngữ nghĩa biển báo — phần còn lại của RQ1 |
-
-**JSON rút gọn (`<tên>_brief.json`).** Một schema riêng, gọn hơn nhiều, chỉ giữ lại các trường mà mục 3.3 xác định là có đủ độ tin cậy để đưa thẳng vào lý luận của LLM (Bảng 3.2).
-
-**Bảng 3.2.** Các trường trong JSON rút gọn và lý do giữ lại.
-
-| Trường | Ý nghĩa | Lý do giữ lại |
-|---|---|---|
-| `lane_count` | Số làn đường | Ngữ cảnh tối thiểu cho mọi khuyến nghị liên quan đến làn |
-| `ego_lane` | Vị trí dạng "X/Y" và độ tin cậy | Ngữ nghĩa cốt lõi nhất, không thể lược bỏ mà vẫn còn ý nghĩa |
-| `vehicle_offset` | Hướng, mức độ, phần trăm lệch | Ngữ nghĩa cốt lõi thứ hai, phục vụ trực tiếp khuyến nghị giữ làn/căn chỉnh |
-| `neighbor_lanes` | Số làn trái/phải | Cần cho khuyến nghị chuyển làn, đủ ngắn gọn không cần danh sách chi tiết |
-| `road_shape` | Loại, mức độ, hướng cong | Ngữ nghĩa cấp đường tối thiểu, ảnh hưởng trực tiếp đến khuyến nghị tốc độ/giữ vô lăng |
-
-Không có siêu dữ liệu, không có `traffic_signs`. Các trường bị loại khỏi bản rút gọn — toàn bộ siêu dữ liệu, `traffic_signs`, `road_environment`, và các trường hình học phụ trợ trong `geometry` — đều thuộc một trong ba nhóm: (a) không trực tiếp phục vụ suy luận về hành vi lái xe (siêu dữ liệu); (b) có độ tin cậy thấp hơn do được tính bằng heuristic đơn giản (`road_environment`, các trường hình học phụ trợ); hoặc (c) đã có một kênh thông tin song song đáng tin cậy hơn (biển báo được cấp trực tiếp qua ảnh ở các chế độ `image_only`/`image_json`). Mục tiêu thiết kế là cấp cho LLM một bản dữ liệu tối giản nhất có thể mà vẫn đủ để suy luận, giảm nguy cơ LLM bị phân tán bởi các trường ít giá trị quyết định hoặc độ tin cậy thấp.
-
-Schema rút gọn này còn được sử dụng ở một vai trò khác, tách biệt với vai trò làm input cho tầng suy luận: làm định dạng output mục tiêu cho thí nghiệm kiểm chứng khả năng tự nhận diện của VLM (mục 4.8), nơi VLM được yêu cầu tự trích xuất đúng năm trường này trực tiếp từ ảnh, không kèm bất kỳ gợi ý nào, rồi so sánh với giá trị mà pipeline UFLD-v2 tính ra. Ở vai trò này, `_brief.json` chỉ đóng vai trò khuôn mẫu cấu trúc cho output cần so sánh, không phải input được cấp cho VLM, nên không phát sinh vấn đề về công bằng hay rò rỉ thông tin.
+**JSON rút gọn (`<tên>_brief.json`).** Một schema riêng, gọn hơn nhiều, chỉ gồm năm trường cấp quyết định: `lane_count`, `ego_lane` (vị trí dạng "X/Y" và độ tin cậy), `vehicle_offset` (hướng, mức độ, phần trăm lệch), `neighbor_lanes` (số làn trái/phải), `road_shape` (loại, mức độ, hướng cong) — không có siêu dữ liệu, không có `traffic_signs`. Thiết kế nhằm cấp cho LLM một bản dữ liệu tối giản, loại bỏ các trường thiếu bằng chứng đủ tin cậy khỏi ngữ cảnh của LLM. Schema này được sử dụng đúng mục đích ở một thí nghiệm khác của đề tài: làm định dạng output mục tiêu cho thí nghiệm kiểm chứng khả năng tự nhận diện của VLM (mục 4.8), nơi VLM được yêu cầu tự trích xuất đúng năm trường này trực tiếp từ ảnh, không kèm bất kỳ gợi ý nào, rồi so sánh với giá trị mà pipeline UFLD-v2 tính ra. Ở vai trò này, `_brief.json` chỉ đóng vai trò khuôn mẫu cấu trúc cho output cần so sánh, không phải input được cấp cho VLM, nên không phát sinh vấn đề về công bằng hay rò rỉ thông tin.
 
 ## 3.5. Thiết kế prompt cho tầng suy luận
 
-Prompt gửi tới VLM được ghép từ một khối nội dung chung (`common`) và một trong ba khối riêng theo chế độ input đang chạy (`image_only`, `json_only`, `image_json`). Khối `common` tập trung vào bốn ngữ nghĩa cấp làn đường — số làn, làn ego, độ lệch tâm, làn lân cận — kèm hai nhóm quy tắc tường minh: quy tắc chống ảo giác (không suy diễn thông tin không có bằng chứng trực tiếp trong ảnh/JSON; không coi việc thiếu phát hiện là bằng chứng cho việc vật thể không tồn tại) và quy tắc ra quyết định khi hai nguồn có vẻ mâu thuẫn (áp dụng riêng cho chế độ `image_json`, nơi cả ảnh lẫn JSON cùng được cấp).
-
-Khối hướng dẫn định dạng output ba phần (Tình huống, Khuyến nghị, Lưu ý an toàn) được đặt ở vị trí cuối cùng của prompt — sau khối JSON (ở các chế độ có JSON) — thay vì ở đầu như một lựa chọn trực giác thông thường. Lựa chọn này dựa trên hiệu ứng vị trí trong cách LLM sử dụng ngữ cảnh dài: Liu và cộng sự [35] cho thấy độ chính xác truy xuất thông tin của LLM đạt cao nhất khi thông tin quan trọng nằm ở đầu hoặc cuối ngữ cảnh, và giảm rõ rệt khi nằm ở giữa một ngữ cảnh dài. Đặt hướng dẫn định dạng ngay trước điểm mô hình bắt đầu sinh output — vị trí "cuối" của prompt — tận dụng hiệu ứng recency này, giảm nguy cơ hướng dẫn bị mô hình bỏ qua sau khi phải xử lý một khối JSON dài ở giữa prompt.
-
-Trong quá trình phát triển, hai vấn đề thực nghiệm cụ thể đã được phát hiện trực tiếp trên output thật của mô hình (không phải giả định trước) và khắc phục:
-
-- **Lặp lại vô hạn trên ảnh ít thông tin.** Với các ảnh mà cả JSON lẫn nội dung ảnh đều nghèo bằng chứng (ảnh mờ, thiếu vạch kẻ rõ ràng), một số mô hình có xu hướng lặp lại cùng một câu (ví dụ "The image does not provide enough information...") nhiều lần liên tiếp trong cùng một lượt sinh. Khắc phục bằng cách đặt `frequency_penalty=0,4` khi gọi API — tham số này phạt trực tiếp việc lặp lại token/cụm từ đã xuất hiện trong output, và giá trị 0,4 được chọn cụ thể để xử lý hiện tượng lặp lại quan sát được, không phải một siêu tham số được dò rộng bằng grid-search.
-- **Trả lời quá ngắn, không tuân thủ cấu trúc bắt buộc.** Một số phản hồi bỏ qua cấu trúc ba phần hoặc chỉ nêu kết luận mà không có căn cứ đi kèm. Khắc phục bằng cách bổ sung yêu cầu tường minh trong khối `common`: mỗi phần trong ba phần output phải nêu bằng chứng cụ thể trích từ ảnh và/hoặc JSON, không chỉ kết luận suông — buộc mô hình "chỉ ra" thay vì chỉ "khẳng định", đồng thời gián tiếp giảm nguy cơ ảo giác vì một bằng chứng trích dẫn sai lệch dễ bị người đọc/judge phát hiện hơn một kết luận suông sai lệch.
+Prompt được thiết kế qua nhiều vòng lặp thực nghiệm, tập trung vào bốn ngữ nghĩa cấp làn đường — số làn, làn ego, độ lệch tâm, làn lân cận — kèm các quy tắc chống ảo giác (không suy diễn thông tin không có bằng chứng, không coi thiếu phát hiện là bằng chứng cho việc vật thể không tồn tại) và yêu cầu cấu trúc output cố định gồm ba phần: Tình huống, Khuyến nghị, Lưu ý an toàn, nhằm đảm bảo tính nhất quán giữa các lần sinh. Trong quá trình phát triển, hai vấn đề đã được phát hiện và khắc phục: hiện tượng mô hình lặp lại vô hạn cùng một câu trả lời trên ảnh ít thông tin, khắc phục bằng tham số frequency penalty; và hiện tượng mô hình trả lời quá ngắn, không tuân thủ cấu trúc bắt buộc, khắc phục bằng yêu cầu nêu bằng chứng cụ thể cho từng phần.
 
 ## 3.6. Lựa chọn mô hình cho tầng suy luận
 
-Do giới hạn về chi phí và khả năng tái lập, phạm vi lựa chọn mô hình được giới hạn trong các VLM khả dụng miễn phí qua NVIDIA NIM API (định dạng OpenAI-compatible thống nhất). Quá trình chọn mô hình cụ thể diễn ra tuần tự theo kinh nghiệm triển khai thực tế, không phải một phép so sánh đồng thời được thiết kế sẵn từ đầu:
-
-1. **Bắt đầu với `nemotron-nano-vl-8b`** (8 tỷ tham số) — mô hình đa phương thức nhẹ nhất do NVIDIA cung cấp qua NIM API tại thời điểm triển khai, được chọn làm điểm khởi đầu vì thời gian phản hồi nhanh, phù hợp cho giai đoạn phát triển và gỡ lỗi pipeline ban đầu.
-2. **Thử nâng cấp lên `nemotron-nano-12b-v2-vl`** (12 tỷ tham số) — kỳ vọng chất lượng cao hơn nhờ quy mô lớn hơn, nhưng mô hình này cho tỉ lệ lỗi/thất bại yêu cầu rất cao trong thực nghiệm thực tế (định lượng cụ thể ở Bảng 4.4, mục 4.4: 82,9% yêu cầu thất bại), không đạt ngưỡng độ tin cậy tối thiểu để cân nhắc triển khai.
-3. **Thử `ising-calibration-1.5-31b`** (31 tỷ tham số) — cho kết quả ổn định hơn hẳn `nemotron-nano-12b-v2-vl` và chất lượng nội dung tốt hơn `nemotron-nano-vl-8b`, trong khi thời gian phản hồi không kém đáng kể so với mô hình 8B ban đầu — một kết quả không hiển nhiên trước khi thử, vì quy mô tham số gấp gần bốn lần thường đi kèm độ trễ cao hơn tương ứng.
-
-Ba mô hình trải qua trong quá trình này — `nemotron-nano-vl-8b`, `nemotron-nano-12b-v2-vl`, `ising-calibration-1.5-31b` — cũng đồng thời thỏa mãn ba tiêu chí có thể phát biểu lại a posteriori để đóng khung việc so sánh có hệ thống ở mục 4.4:
+Do giới hạn về chi phí và khả năng tái lập, phạm vi lựa chọn mô hình được giới hạn trong các VLM khả dụng miễn phí qua NVIDIA NIM API (định dạng OpenAI-compatible thống nhất). Ba mô hình cụ thể được chọn để so sánh dựa trên ba tiêu chí:
 
 1. Hỗ trợ đa phương thức (nhận đồng thời ảnh và văn bản) — điều kiện bắt buộc của pipeline, loại trừ các mô hình chỉ xử lý văn bản.
 2. Khả dụng miễn phí qua cùng một API thống nhất, đảm bảo chi phí triển khai bằng 0 và tính nhất quán khi thực nghiệm, đúng định hướng training-free/chi phí thấp của đề tài (mục 1.5).
-3. Trải dài trên nhiều mức quy mô tham số khác nhau (8B/12B/31B), cho phép quan sát liệu quy mô mô hình có tương quan với độ tin cậy và chất lượng đầu ra hay không, phục vụ trực tiếp RQ2.
+3. Trải dài trên nhiều mức quy mô tham số khác nhau trong phạm vi các mô hình khả dụng, cho phép quan sát liệu quy mô mô hình có tương quan với độ tin cậy và chất lượng đầu ra hay không, phục vụ trực tiếp RQ4.
 
-Ba tiêu chí này được dùng để đóng khung lại quá trình thử nghiệm tuần tự nêu trên thành một phép so sánh có kiểm soát, có thể tái lập — thay vì chỉ dừng ở nhận xét định tính "31B tốt hơn" — với tiêu chí so sánh cụ thể, theo đúng thứ tự ưu tiên: độ tin cậy — tỉ lệ hoàn thành thành công khi chạy trên toàn bộ batch thật, được xét trước và độc lập với chất lượng nội dung, vì một mô hình không phản hồi ổn định không thể triển khai cho một hệ thống hỗ trợ quyết định thời gian thực, bất kể chất lượng câu trả lời khi nó phản hồi thành công tốt tới đâu; tỉ lệ tuân thủ cấu trúc output bắt buộc; và chất lượng nội dung, chấm điểm bởi LLM-as-a-judge, chỉ áp dụng cho các mô hình đã vượt qua ngưỡng tối thiểu ở tiêu chí đầu tiên.
+Ba mô hình thỏa mãn đồng thời cả ba tiêu chí là: `nemotron-nano-vl-8b` (8 tỷ tham số), `nemotron-nano-12b-v2-vl` (12 tỷ tham số), `ising-calibration-1.5-31b` (31 tỷ tham số).
 
-**Trình tự thực nghiệm.** Việc chọn mô hình LLM ở mục này (RQ2) và kết quả trung tâm về đóng góp của JSON ngữ nghĩa ở mục 4.5 (câu hỏi nghiên cứu cốt lõi) là hai thực nghiệm tách biệt, chạy tuần tự, không phụ thuộc vòng tròn vào nhau:
+Tiêu chí so sánh giữa ba mô hình gồm, theo đúng thứ tự ưu tiên: độ tin cậy — tỉ lệ hoàn thành thành công khi chạy trên toàn bộ batch thật, được xét trước và độc lập với chất lượng nội dung, vì một mô hình không phản hồi ổn định không thể triển khai cho một hệ thống hỗ trợ quyết định thời gian thực, bất kể chất lượng câu trả lời khi nó phản hồi thành công tốt tới đâu; tỉ lệ tuân thủ cấu trúc output bắt buộc; và chất lượng nội dung, chấm điểm bởi LLM-as-a-judge, chỉ áp dụng cho các mô hình đã vượt qua ngưỡng tối thiểu ở tiêu chí đầu tiên.
+
+**Trình tự thực nghiệm.** Việc chọn mô hình LLM ở mục này (RQ4) và kết quả trung tâm về đóng góp của JSON ngữ nghĩa ở mục 4.5 (RQ3) là hai thực nghiệm tách biệt, chạy tuần tự, không phụ thuộc vòng tròn vào nhau:
 
 1. *Giai đoạn 1 — chọn mô hình (mục 4.4)*: cả ba mô hình ứng viên được chạy ở cùng một chế độ input cố định — `image+json`, chế độ cấp đầy đủ thông tin nhất, cho mỗi mô hình cơ hội thể hiện tốt nhất — và được chấm điểm bởi đúng một judge (Gemini) để xác định mô hình có độ tin cậy và chất lượng tốt nhất. Kết quả: `ising-calibration-31b` được chọn.
-2. *Giai đoạn 2 — so sánh chế độ input (mục 4.5)*: mô hình đã chọn được giữ cố định, và biến số duy nhất được thay đổi là chế độ input (`image_only`/`json_only`/`image+json`), chấm điểm bởi cả ba judge độc lập để trả lời câu hỏi nghiên cứu cốt lõi.
+2. *Giai đoạn 2 — so sánh chế độ input (mục 4.5)*: mô hình đã chọn được giữ cố định, và biến số duy nhất được thay đổi là chế độ input (`image_only`/`json_only`/`image+json`), chấm điểm bởi cả ba judge độc lập để trả lời RQ3.
 
-Nói cách khác, chuỗi xử lý thực tế là: ảnh → detection/semantic analysis → chạy ba mô hình LLM ở chế độ `image+json`, Gemini chấm điểm, chọn mô hình thắng → cố định mô hình thắng, chạy lại ở cả ba chế độ input, cả ba judge chấm điểm, kết luận cho câu hỏi nghiên cứu cốt lõi. Bước chấm điểm để chọn mô hình và bước chấm điểm để so sánh chế độ input là hai lượt riêng biệt, phục vụ hai câu hỏi nghiên cứu khác nhau, không phải cùng một lượt chấm dùng cho cả hai mục đích.
+Nói cách khác, chuỗi xử lý thực tế là: ảnh → detection/semantic analysis → chạy ba mô hình LLM ở chế độ `image+json`, Gemini chấm điểm, chọn mô hình thắng → cố định mô hình thắng, chạy lại ở cả ba chế độ input, cả ba judge chấm điểm, kết luận RQ3. Bước chấm điểm để chọn mô hình và bước chấm điểm để so sánh chế độ input là hai lượt riêng biệt, phục vụ hai câu hỏi nghiên cứu khác nhau, không phải cùng một lượt chấm dùng cho cả hai mục đích.
 
-**Giao thức thực nghiệm (cấu hình gọi API).** Cả ba mô hình ứng viên đều được gọi qua cùng một client, cùng một bộ tham số sinh (generation parameters) mặc định — không mô hình nào được ưu ái bằng cấu hình riêng — liệt kê ở Bảng 3.3.
-
-**Bảng 3.3.** Cấu hình gọi API dùng chung cho cả ba mô hình ứng viên và cả ba chế độ input.
-
-| Tham số | Giá trị | Lý do |
-|---|---|---|
-| `max_tokens` | 400 | Hạ từ 1024 xuống 400 để giới hạn thiệt hại nếu mô hình rơi vào trạng thái lặp vô hạn (đã quan sát thực tế: một output lặp cùng một câu khoảng 6 lần liên tiếp trước khi bị cắt cụt ở giới hạn 1024 cũ) |
-| `temperature` | 0,2 | Giá trị thấp, ưu tiên output ổn định/tái lập được hơn là đa dạng, phù hợp một tác vụ cần độ chính xác về sự kiện (fact-based) hơn là sáng tạo văn phong |
-| `top_p` | 0,7 | Kết hợp với `temperature` thấp để giới hạn thêm không gian lấy mẫu |
-| `frequency_penalty` | 0,4 | Phạt lặp token, thêm để khắc phục hiện tượng lặp câu đã quan sát được (mục 3.5) |
-| `timeout` | 120 giây/yêu cầu | Ngưỡng chờ trước khi coi một yêu cầu là thất bại |
-| Nén ảnh trước khi mã hóa base64 | ≤150 KB | Giảm dung lượng payload gửi API, tránh bị NVIDIA NIM từ chối ảnh quá lớn |
-
-Ba chế độ input (`image_only`/`json_only`/`image_json`) dùng chung nguyên vẹn bộ cấu hình trên và cùng một mô hình; biến số duy nhất thay đổi giữa ba chế độ là **khối prompt** được ghép vào (mục 3.5) và dữ liệu đính kèm theo yêu cầu của chế độ đó (ảnh, JSON, hoặc cả hai) — không có tham số sinh nào bị điều chỉnh riêng theo chế độ, đảm bảo mọi khác biệt về chất lượng output quan sát được ở Chương 4 chỉ có thể quy về sự khác biệt của thông tin đầu vào, không phải do cấu hình gọi mô hình khác nhau.
-
-**Vì sao Giai đoạn 1 chỉ dùng một chế độ input và một judge.** Đây là một lựa chọn thiết kế thực nghiệm có chủ đích, dựa trên ba căn cứ. Thứ nhất, RQ2 và câu hỏi nghiên cứu cốt lõi là hai câu hỏi trực giao: chạy toàn bộ ma trận ba mô hình × ba chế độ × ba judge sẽ tốn gấp nhiều lần chi phí và thời gian API mà không phục vụ trực tiếp RQ2, vốn chỉ cần xác định mô hình nào đáng tin cậy và chất lượng tốt nhất, không cần biết mô hình đó tương tác thế nào với từng chế độ input cụ thể; cố định chế độ input ở `image+json` khi so sánh mô hình là cách chuẩn để đảm bảo mỗi mô hình được đánh giá trong điều kiện thuận lợi nhất có thể, tách bạch "mô hình yếu" khỏi "mô hình bị thiếu thông tin". Thứ hai, đây là một ràng buộc trong trình tự phát triển thực tế: tại thời điểm Giai đoạn 1 được thực hiện, GPT-5 Mini và DeepSeek chưa được tích hợp làm judge — Gemini là judge duy nhất tồn tại trong hệ thống ở giai đoạn đó — và việc bổ sung đối chiếu đa-judge (mục 4.6) là một bước siết chặt phương pháp luận được thêm vào sau, dành riêng cho kết quả trung tâm ở mục 4.5, nơi kết luận thực sự nhạy với lựa chọn judge (thứ hạng `json_only` so với `image+json` đảo chỗ tùy judge, Bảng 4.6). Thứ ba, độ lớn chênh lệch giữa các mô hình ở RQ2 không đòi hỏi kiểm chứng đa-judge để tin cậy: `nemotron-nano-12b-v2-vl` thất bại tới 82,9% số yêu cầu, và `ising-calibration-31b` vượt `nemotron-nano-8b` với Cohen's d xấp xỉ 1,04 (Bảng 4.4) — một hiệu ứng rất lớn, khó có khả năng bị đảo ngược chỉ vì đổi judge; thêm vào đó, mục 4.6 (thực hiện sau) xác nhận Gemini là judge có tương quan với con người cao nhất trong ba judge đã thử, củng cố thêm — dù không phải bằng chứng có sẵn tại thời điểm Giai đoạn 1 được thực hiện — rằng lựa chọn Gemini làm judge duy nhất cho quyết định này là hợp lý.
+**Vì sao Giai đoạn 1 chỉ dùng một chế độ input và một judge.** Đây là một lựa chọn thiết kế thực nghiệm có chủ đích, dựa trên ba căn cứ. Thứ nhất, RQ4 và RQ3 là hai câu hỏi trực giao: chạy toàn bộ ma trận ba mô hình × ba chế độ × ba judge sẽ tốn gấp nhiều lần chi phí và thời gian API mà không phục vụ trực tiếp RQ4, vốn chỉ cần xác định mô hình nào đáng tin cậy và chất lượng tốt nhất, không cần biết mô hình đó tương tác thế nào với từng chế độ input cụ thể; cố định chế độ input ở `image+json` khi so sánh mô hình là cách chuẩn để đảm bảo mỗi mô hình được đánh giá trong điều kiện thuận lợi nhất có thể, tách bạch "mô hình yếu" khỏi "mô hình bị thiếu thông tin". Thứ hai, đây là một ràng buộc trong trình tự phát triển thực tế: tại thời điểm Giai đoạn 1 được thực hiện, GPT-5 Mini và DeepSeek chưa được tích hợp làm judge — Gemini là judge duy nhất tồn tại trong hệ thống ở giai đoạn đó — và việc bổ sung đối chiếu đa-judge (mục 4.6) là một bước siết chặt phương pháp luận được thêm vào sau, dành riêng cho kết quả trung tâm ở mục 4.5, nơi kết luận thực sự nhạy với lựa chọn judge (thứ hạng `json_only` so với `image+json` đảo chỗ tùy judge, Bảng 4.6). Thứ ba, độ lớn chênh lệch giữa các mô hình ở RQ4 không đòi hỏi kiểm chứng đa-judge để tin cậy: `nemotron-nano-12b-v2-vl` thất bại tới 82,9% số yêu cầu, và `ising-calibration-31b` vượt `nemotron-nano-8b` với Cohen's d xấp xỉ 1,04 (Bảng 4.4) — một hiệu ứng rất lớn, khó có khả năng bị đảo ngược chỉ vì đổi judge; thêm vào đó, mục 4.6 (thực hiện sau) xác nhận Gemini là judge có tương quan với con người cao nhất trong ba judge đã thử, củng cố thêm — dù không phải bằng chứng có sẵn tại thời điểm Giai đoạn 1 được thực hiện — rằng lựa chọn Gemini làm judge duy nhất cho quyết định này là hợp lý.
 
 ## 3.7. Phương pháp luận đánh giá
 
 **Đánh giá module hiểu làn đường/biển báo.** So sánh trực tiếp với ground truth gán tay, sử dụng các metric chuẩn: Accuracy (tỉ lệ khớp chính xác), MAE (sai số tuyệt đối trung bình), Precision và Recall.
 
-**Đánh giá chất lượng khuyến nghị lái xe.** Sử dụng LLM-as-a-judge với rubric sáu tiêu chí, trọng số bằng nhau, thang điểm 1–5: `situation_understanding` (hiểu đúng đường/giao thông/nguy cơ liên quan), `road_understanding` (đúng hình học đường, làn, ranh giới, làn lân cận), `lane_ego_position` (đúng làn ego, vị trí, độ lệch khi có bằng chứng), `traffic_sign_rule` (đúng biển báo, tín hiệu, quy tắc/giới hạn tốc độ được hỗ trợ tường minh bởi bằng chứng), `driving_recommendation` (hành động an toàn, phù hợp, cần thiết, cụ thể, có căn cứ), `safety_considerations` (nêu đúng rủi ro an toàn liên quan, không nêu chung chung/không có căn cứ).
-
-Mỗi mức điểm trong thang 1–5 được neo bằng một mô tả cố định, áp dụng thống nhất cho cả sáu tiêu chí (Bảng 3.4) — đây là căn cứ để judge (và người đọc luận văn) phân biệt "điểm 3" khác "điểm 4" ở đâu, thay vì một con số không có ngữ nghĩa tường minh.
-
-**Bảng 3.4.** Mô tả từng mức điểm trong thang đánh giá 1–5, áp dụng cho cả sáu tiêu chí.
-
-| Điểm | Mô tả |
-|---|---|
-| 5 | Đúng và có căn cứ rõ ràng; không có lỗi đáng kể |
-| 4 | Phần lớn đúng; chỉ có lỗi/thiếu sót nhỏ, không trọng yếu |
-| 3 | Đúng một phần; có lỗi/thiếu sót đáng chú ý, nhưng phần hiểu chính vẫn dùng được |
-| 2 | Lỗi nghiêm trọng, ảnh hưởng đến việc hiểu tình huống hoặc quyết định lái xe |
-| 1 | Sai, không có căn cứ, hoặc không dùng được |
-
-**Quy trình chấm điểm.** Với mỗi ảnh, judge nhận đồng thời trong một lệnh gọi API duy nhất: (a) ảnh gốc, dùng làm tham chiếu thị giác duy nhất để xác minh tính đúng đắn của sự kiện; (b) văn bản khuyến nghị do VLM sinh ra ở cả ba chế độ input (`image_only`, `json_only`, `image_json`) của cùng một ảnh đó, đánh giá độc lập với nhau — judge được yêu cầu tường minh không so sánh ba chế độ khi chấm từng điểm, và không phạt một chế độ vì thiếu thông tin mà chế độ đó vốn dĩ không được cấp (ví dụ không phạt `json_only` vì không mô tả chi tiết hình ảnh). Output yêu cầu là một cấu trúc JSON, với mỗi tiêu chí × mỗi chế độ là một cặp `{"score": <1-5>, "reason": "<một câu giải thích ngắn>"}` — bắt buộc có lý do đi kèm điểm số để tăng khả năng kiểm tra chéo và giảm rủi ro chấm điểm ngẫu nhiên không có căn cứ. Các quy tắc chấm điểm bổ sung, áp dụng nhất quán cho toàn bộ rubric: chấm theo tính đúng đắn và bằng chứng, không chấm theo văn phong hay độ dài câu trả lời; các khẳng định không có bằng chứng (ảo giác) bị trừ điểm ở đúng tiêu chí liên quan; không thưởng điểm cho lời khuyên an toàn chung chung không gắn với tình huống cụ thể trong ảnh; không suy diễn giới hạn tốc độ khi không có bằng chứng tường minh; không coi việc thiếu phát hiện là bằng chứng cho việc vật thể không tồn tại; đánh giá độc lập từng tiêu chí — một khuyến nghị lái xe đúng không đồng nghĩa phần hiểu tình huống đúng, và ngược lại. Gộp cả ba chế độ vào cùng một lệnh gọi API cho mỗi ảnh (thay vì gọi riêng từng chế độ) vừa tiết kiệm chi phí, vừa đảm bảo cả ba chế độ được đánh giá trong cùng một ngữ cảnh nhất quán.
-
-**Vì sao Gemini được chọn làm judge chính.** Lựa chọn ban đầu dựa trên đánh giá thực tế của nhóm nghiên cứu qua trải nghiệm sử dụng trực tiếp, kết hợp với uy tín chung của Gemini về khả năng diễn giải nội dung đa phương thức tại thời điểm triển khai — được hỗ trợ một phần bởi tài liệu kỹ thuật chính thức của Google về năng lực suy luận đa phương thức của họ mô hình Gemini [36], và một số đánh giá ứng dụng nhấn mạnh khả năng diễn giải chi tiết, dễ hiểu của Gemini trong các ngữ cảnh cụ thể như giáo dục [37]. Cần nói rõ đây không phải một kết luận đồng thuận tuyệt đối trong tài liệu: một số nghiên cứu so sánh trực tiếp Gemini với GPT-4V trên các tác vụ suy luận thị giác khác cho thấy GPT-4V có xu hướng đưa ra giải thích chi tiết, nhiều bước trung gian hơn, trong khi Gemini thiên về câu trả lời ngắn gọn, trực tiếp hơn [38] — tùy tác vụ cụ thể, mô hình này có thể vượt hoặc kém mô hình kia. Do đó, lựa chọn Gemini ở đây cần được nhìn nhận đúng bản chất là một quyết định thực dụng ban đầu (dựa trên đánh giá thực tế và uy tín chung), không phải một kết luận đã được kiểm chứng thực nghiệm từ trước cho riêng bài toán của đề tài — và chính vì vậy, việc kiểm chứng độc lập bằng dữ liệu chấm tay của con người (trình bày ngay bên dưới, định lượng đầy đủ ở mục 4.6) là một bước bắt buộc trong phương pháp luận, không phải thủ tục hình thức: kết quả mục 4.6 sau đó xác nhận Gemini có tương quan với đánh giá của con người cao nhất trong ba judge đã thử, củng cố hậu nghiệm cho lựa chọn ban đầu.
-
-Sau khi Gemini được đưa vào vận hành làm judge duy nhất, GPT-5 Mini và DeepSeek được bổ sung ở giai đoạn phát triển sau — khi ngân sách API cho phép mở rộng — nhằm mục đích đối chiếu đa-judge, không phải để thay thế Gemini; trình tự bổ sung này cũng chính là lý do Giai đoạn 1 chọn mô hình LLM ở mục 3.6 chỉ có Gemini khả dụng làm judge tại thời điểm đó.
+**Đánh giá chất lượng khuyến nghị lái xe.** Sử dụng LLM-as-a-judge với rubric sáu tiêu chí, thang điểm 1–5: `situation_understanding`, `road_understanding`, `lane_ego_position`, `traffic_sign_rule`, `driving_recommendation`, `safety_considerations`. Mỗi ảnh được đánh giá bằng một lệnh gọi API duy nhất, gộp cả ba thí nghiệm cần so sánh trong cùng một ngữ cảnh, vừa tiết kiệm chi phí, vừa đảm bảo tính nhất quán trong đánh giá.
 
 **Kiểm chứng độ tin cậy của judge.** Gồm hai bước: so sánh điểm của Gemini với điểm chấm tay của con người trên một mẫu ngẫu nhiên N=20; và đối chiếu với hai judge độc lập khác (GPT-5 Mini, DeepSeek) trên cùng bộ dữ liệu, dùng nguyên văn cùng một rubric để đảm bảo so sánh công bằng. Mốc chuẩn để đánh giá "judge nào chính xác hơn" là độ đồng thuận với con người, không phải độ đồng thuận giữa các judge với nhau, vì hai judge AI có thể đồng ý với nhau nhưng vẫn cùng chia sẻ một thiên lệch giống nhau so với con người.
 
@@ -647,7 +532,7 @@ Sử dụng mô hình YOLOv8n đã tự tinh chỉnh trên TT100K (mục 3.2), m
 
 ## 4.4. So sánh mô hình LLM cho tầng suy luận
 
-Toàn bộ so sánh trong mục này (Giai đoạn 1, mục 3.6) được chạy ở cùng một chế độ input cố định `image+json` và chấm điểm bởi đúng một judge (Gemini), nhằm chọn ra mô hình LLM sẽ được giữ cố định cho Giai đoạn 2 — so sánh chế độ input, mục 4.5 — chứ không phải một phần của thực nghiệm ba-judge/ba-chế-độ trả lời câu hỏi nghiên cứu cốt lõi.
+Toàn bộ so sánh trong mục này (Giai đoạn 1, mục 3.6) được chạy ở cùng một chế độ input cố định `image+json` và chấm điểm bởi đúng một judge (Gemini), nhằm chọn ra mô hình LLM sẽ được giữ cố định cho Giai đoạn 2 — so sánh chế độ input, mục 4.5 — chứ không phải một phần của thực nghiệm ba-judge/ba-chế-độ trả lời RQ3.
 
 **Độ tin cậy và tốc độ.** `ising-calibration-31b` đạt tỉ lệ thành công 200/200 (0% lỗi), thời gian trung bình 3,80 giây/ảnh. `nemotron-nano-12b-v2-vl` chỉ đạt 34/200 (83% yêu cầu nhận lỗi 500 Internal Server Error từ phía máy chủ NVIDIA NIM).
 
@@ -675,7 +560,7 @@ Tổng hợp cả ba tiêu chí theo đúng thứ tự ưu tiên đã đặt ra 
 
 ## 4.5. Kết quả chính: đóng góp của JSON ngữ nghĩa
 
-Đây là kết quả trung tâm trả lời câu hỏi nghiên cứu cốt lõi, đo trên mô hình chính (`ising-calibration-31b`), ba chế độ input, chấm điểm bởi ba judge độc lập (Gemini, GPT-5 Mini, DeepSeek) dùng nguyên văn cùng một rubric, trên toàn bộ N=200 ảnh.
+Đây là kết quả trung tâm trả lời RQ3, đo trên mô hình chính (`ising-calibration-31b`), ba chế độ input, chấm điểm bởi ba judge độc lập (Gemini, GPT-5 Mini, DeepSeek) dùng nguyên văn cùng một rubric, trên toàn bộ N=200 ảnh.
 
 Với mỗi ảnh, điểm tổng hợp của một chế độ được tính bằng trung bình cộng của sáu điểm tiêu chí trên chính ảnh đó (thang 1–5); từ đó thu được, với mỗi judge, ba dãy 200 điểm bắt cặp theo ảnh — một dãy cho mỗi chế độ. Điểm trung bình toàn mẫu của một chế độ, dùng để báo cáo ở Bảng 4.5, là trung bình cộng của dãy 200 điểm-trên-ảnh đó:
 
@@ -782,9 +667,9 @@ Mục 4.8 cho thấy VLM tự nhận diện làn đường không hề yếu —
 - **Prompt không tương đương.** `json_only` cấp sẵn dữ liệu có cấu trúc để tham chiếu trực tiếp khi viết câu trả lời; `image_only` chỉ yêu cầu quan sát ảnh chung chung, ít khung đỡ hơn hẳn.
 - **Judge chấm văn phong, không đối chiếu ground truth.** Một câu trả lời trích số liệu cụ thể ("làn 2/3, lệch 19,3%") dễ được đánh giá là có căn cứ và tự tin hơn, dù độ chính xác thực tế của con số đó chưa chắc cao hơn — đúng thiên vị phong cách viết mà MT-Bench đã ghi nhận như hạn chế cố hữu của LLM-as-judge [5] (mục 2.4), lý do đề tài kiểm chứng bằng đối chiếu con người thay vì tin tuyệt đối vào judge (mục 4.6).
 
-Cách diễn giải này không làm suy yếu kết luận của câu hỏi nghiên cứu cốt lõi — JSON vẫn cải thiện chất lượng khuyến nghị, kiểm chứng bởi ba judge độc lập — mà làm rõ hơn cơ chế: JSON giúp câu trả lời mạch lạc và có căn cứ hơn trong một tác vụ ghép nhiều bước, không đơn thuần vì VLM "không nhìn được đường". Đây là suy luận dựa trên bằng chứng gián tiếp — hai thực nghiệm dùng hai prompt khác độ phức tạp — chưa qua một thực nghiệm đối chứng trực tiếp (cùng độ phức tạp prompt, chỉ khác có/không JSON); đây là một hướng mở rộng ở mục 5.4.
+Cách diễn giải này không làm suy yếu kết luận RQ3 — JSON vẫn cải thiện chất lượng khuyến nghị, kiểm chứng bởi ba judge độc lập — mà làm rõ hơn cơ chế: JSON giúp câu trả lời mạch lạc và có căn cứ hơn trong một tác vụ ghép nhiều bước, không đơn thuần vì VLM "không nhìn được đường". Đây là suy luận dựa trên bằng chứng gián tiếp — hai thực nghiệm dùng hai prompt khác độ phức tạp — chưa qua một thực nghiệm đối chứng trực tiếp (cùng độ phức tạp prompt, chỉ khác có/không JSON); đây là một hướng mở rộng ở mục 5.4.
 
-**Tóm tắt chương.** Chương này đã trình bày kết quả thực nghiệm cho câu hỏi nghiên cứu cốt lõi và cả ba câu hỏi thành phần: độ chính xác của module hiểu làn đường và biển báo (RQ1), lựa chọn mô hình suy luận (RQ2), đóng góp của JSON ngữ nghĩa cùng kiểm chứng độ tin cậy của phương pháp đánh giá (câu hỏi nghiên cứu cốt lõi, RQ3), và một thực nghiệm bổ sung làm rõ cơ chế đóng góp thực sự của JSON. Chương 5 tiếp theo tổng kết các đóng góp, trả lời trực tiếp từng câu hỏi nghiên cứu, thảo luận hạn chế và đề xuất hướng phát triển tiếp theo.
+**Tóm tắt chương.** Chương này đã trình bày kết quả thực nghiệm cho cả năm câu hỏi nghiên cứu: độ chính xác của module hiểu làn đường và biển báo (RQ1, RQ2), lựa chọn mô hình suy luận (RQ4), đóng góp của JSON ngữ nghĩa cùng kiểm chứng độ tin cậy của phương pháp đánh giá (RQ3, RQ5), và một thực nghiệm bổ sung làm rõ cơ chế đóng góp thực sự của JSON. Chương 5 tiếp theo tổng kết các đóng góp, trả lời trực tiếp từng câu hỏi nghiên cứu, thảo luận hạn chế và đề xuất hướng phát triển tiếp theo.
 
 ---
 
@@ -798,17 +683,17 @@ Cách diễn giải này không làm suy yếu kết luận của câu hỏi ngh
 2. **Minh chứng cho tầm quan trọng của tầng diễn giải ngữ nghĩa**: lỗi off-by-one phát hiện trong quá trình xây dựng tầng chuyển đổi ngữ nghĩa khiến Accuracy ban đầu chỉ đạt 11,1%, dù bản thân UFLD-v2 đã đạt F1 = 76,0% ở tầng phát hiện [1]. Việc sửa lỗi này tự nó không phải một đóng góp thuật toán, nhưng là bằng chứng thực nghiệm cho luận điểm rằng chất lượng của một detector không tự động đảm bảo chất lượng của hệ hỗ trợ quyết định — cho thấy giá trị của việc đầu tư kiểm chứng kỹ lưỡng tầng diễn giải ngữ nghĩa (mục 2.1, 4.1).
 3. **Module biển báo** đạt hiệu quả thực sự khi dữ liệu đủ dày (Precision/Recall 60,9% trên dữ liệu real-life), nhưng bị giới hạn trên CULane do đặc thù dataset thưa biển báo (6% ảnh có detection).
 4. **JSON ngữ nghĩa cải thiện rõ rệt chất lượng khuyến nghị lái xe**: Gemini 3,32 → 4,53/5, tương đương +36%, có kiểm chứng nhất quán bởi ba judge độc lập trên N=200 (mục 4.5).
-5. **Làm rõ cơ chế đóng góp của JSON ngữ nghĩa**: một kiểm chứng bổ sung cho thấy VLM tự nhận diện làn đường từ ảnh thô không hề yếu, thậm chí vượt pipeline UFLD-v2 khi thiếu vạch kẻ hoặc trên dữ liệu ngoài domain (mục 4.8), nên JSON cải thiện chất lượng khuyến nghị chủ yếu nhờ vai trò khung đỡ cho suy luận và trình bày trong một tác vụ ghép nhiều bước, không chỉ vì bù đắp năng lực cảm nhận thị giác còn thiếu (mục 4.9).
-6. **Phương pháp đánh giá LLM-as-a-judge có kiểm chứng**: đối chiếu với con người đạt 79,2% đồng thuận trong sai số ≤1 (N=20), và đối chiếu chéo ba judge cùng phương pháp xác định Gemini vượt trội rõ rệt GPT-5 Mini và DeepSeek ở cả ba chỉ số đồng thuận với con người (mục 4.6) — căn cứ chính cho việc chọn Gemini làm judge chính, thay vì đối sánh trực tiếp với các nghiên cứu LLM-as-a-judge khác vốn dùng tác vụ và thang đo khác biệt về bản chất [5].
+5. **Phương pháp đánh giá LLM-as-a-judge có kiểm chứng**: đối chiếu với con người đạt 79,2% đồng thuận trong sai số ≤1 (N=20), và đối chiếu chéo ba judge cùng phương pháp xác định Gemini vượt trội rõ rệt GPT-5 Mini và DeepSeek ở cả ba chỉ số đồng thuận với con người (mục 4.6) — căn cứ chính cho việc chọn Gemini làm judge chính, thay vì đối sánh trực tiếp với các nghiên cứu LLM-as-a-judge khác vốn dùng tác vụ và thang đo khác biệt về bản chất [5].
+6. **Làm rõ cơ chế đóng góp của JSON ngữ nghĩa**: một kiểm chứng bổ sung cho thấy VLM tự nhận diện làn đường từ ảnh thô không hề yếu, thậm chí vượt pipeline UFLD-v2 khi thiếu vạch kẻ hoặc trên dữ liệu ngoài domain (mục 4.8), nên JSON cải thiện chất lượng khuyến nghị chủ yếu nhờ vai trò khung đỡ cho suy luận và trình bày trong một tác vụ ghép nhiều bước, không chỉ vì bù đắp năng lực cảm nhận thị giác còn thiếu (mục 4.9).
 
 **Ý nghĩa thực tiễn.** Các kết quả trên cho thấy một hệ hỗ trợ quyết định lái xe có khả năng diễn giải bằng ngôn ngữ tự nhiên có thể được xây dựng với chi phí thấp: tầng suy luận dùng VLM miễn phí qua API, không cần huấn luyện lại; tầng perception biển báo chỉ cần một bước tinh chỉnh nhẹ trên một mô hình nhỏ (YOLOv8n, khoảng 3,2 triệu tham số) thay vì thu thập dữ liệu và huấn luyện một hệ end-to-end quy mô lớn. Kết quả này phù hợp làm nền tảng cho các ứng dụng dashcam hoặc hộp đen thông minh chi phí thấp, hoặc làm điểm khởi đầu để mở rộng sang dữ liệu giao thông Việt Nam mà không cần xây dựng lại từ đầu — chỉ cần tinh chỉnh nhẹ ở tầng perception làn đường và biển báo (mục 5.4).
 
 ## 5.2. Trả lời các câu hỏi nghiên cứu
 
-- **Câu hỏi nghiên cứu cốt lõi**: JSON ngữ nghĩa cải thiện chất lượng khuyến nghị lái xe so với chỉ dùng ảnh — kết luận có kiểm chứng vững chắc (mục 4.5), với cơ chế đóng góp được làm rõ thêm ở mục 4.8–4.9.
-- **RQ1**: đã được trả lời định lượng đầy đủ ở mục 4.1–4.3 (module hiểu làn đường và biển báo).
-- **RQ2**: `ising-calibration-31b` là lựa chọn phù hợp nhất trong phạm vi mô hình khảo sát, dựa trên độ tin cậy, tuân thủ cấu trúc và chất lượng nội dung (mục 4.4).
-- **RQ3**: LLM-as-a-judge (Gemini) đạt độ tin cậy chấp nhận được khi đối chiếu với con người, tốt hơn hai judge thay thế đã thử nghiệm — GPT-5 Mini, DeepSeek — ở cả ba chỉ số đồng thuận (mục 4.6).
+- **RQ1–RQ2**: đã được trả lời định lượng đầy đủ ở mục 4.1–4.3.
+- **RQ3**: JSON ngữ nghĩa cải thiện chất lượng khuyến nghị lái xe so với chỉ dùng ảnh — kết luận có kiểm chứng vững chắc (mục 4.5), với cơ chế đóng góp được làm rõ thêm ở mục 4.8–4.9.
+- **RQ4**: `ising-calibration-31b` là lựa chọn phù hợp nhất trong phạm vi mô hình khảo sát, dựa trên độ tin cậy, tuân thủ cấu trúc và chất lượng nội dung (mục 4.4).
+- **RQ5**: LLM-as-a-judge (Gemini) đạt độ tin cậy chấp nhận được khi đối chiếu với con người, tốt hơn hai judge thay thế đã thử nghiệm — GPT-5 Mini, DeepSeek — ở cả ba chỉ số đồng thuận (mục 4.6).
 
 ## 5.3. Hạn chế
 
@@ -896,11 +781,3 @@ Ba hướng sau được sắp xếp theo mức độ ưu tiên, từ tác độ
 [32] Insurance Institute for Highway Safety (IIHS), "Stay within the lines: Lane departure warning, blind spot detection help drivers avoid trouble," IIHS News, Aug. 2017. [Online]. Available: https://www.iihs.org/news/detail/stay-within-the-lines-lane-departure-warning-blind-spot-detection-help-drivers-avoid-trouble
 
 [34] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Küttler, M. Lewis, W.-t. Yih, T. Rocktäschel, S. Riedel, and D. Kiela, "Retrieval-augmented generation for knowledge-intensive NLP tasks," in *Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)*, 2020.
-
-[35] N. F. Liu, K. Lin, J. Hewitt, A. Paranjape, M. Bevilacqua, F. Petroni, and P. Liang, "Lost in the middle: How language models use long contexts," *Trans. Assoc. Comput. Linguist.*, vol. 12, pp. 157–173, 2024, doi: 10.1162/tacl_a_00638.
-
-[36] Gemini Team, Google, "Gemini: A family of highly capable multimodal models," *arXiv:2312.11805*, 2023.
-
-[37] M. Imran and N. Almusharraf, "Google Gemini as a next generation AI educational tool: A review of emerging educational technology," *Smart Learn. Environ.*, vol. 11, 2024, doi: 10.1186/s40561-024-00310-z.
-
-[38] Z. Qi, Y. Fang, M. Zhang, Z. Sun, T. Wu, Z. Liu, D. Lin, J. Wang, and H. Zhao, "Gemini vs GPT-4V: A preliminary comparison and combination of vision-language models through qualitative cases," *arXiv:2312.15011*, 2023.
