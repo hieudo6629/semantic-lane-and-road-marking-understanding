@@ -1,5 +1,6 @@
 {
   "lane_count": 2,
+  "order": "left to right",
   "ego_lane": {
     "position": "2/2",
     "confidence": 0.95
@@ -17,5 +18,24 @@
     "type": "curve",
     "severity": "gentle",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "i5",
+        "confidence": 0.762079656124115,
+        "bbox": [
+          542,
+          330,
+          560,
+          349
+        ],
+        "relative_position": "center",
+        "distance": "medium",
+        "raw_class_name": "i5",
+        "display_name": "Keep left"
+      }
+    ],
+    "count": 1
   }
 }

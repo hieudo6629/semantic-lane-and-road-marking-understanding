@@ -1,5 +1,6 @@
 {
   "lane_count": 3,
+  "order": "left to right",
   "ego_lane": {
     "position": "2/3",
     "confidence": 0.95
@@ -17,5 +18,52 @@
     "type": "straight",
     "severity": "none",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "p23",
+        "confidence": 0.8959922194480896,
+        "bbox": [
+          360,
+          404,
+          395,
+          438
+        ],
+        "relative_position": "left",
+        "distance": "near",
+        "raw_class_name": "p23",
+        "display_name": "No left turn"
+      },
+      {
+        "sign_type": "p10",
+        "confidence": 0.7838802337646484,
+        "bbox": [
+          328,
+          346,
+          351,
+          371
+        ],
+        "relative_position": "left",
+        "distance": "medium",
+        "raw_class_name": "p10",
+        "display_name": "No entry for motor vehicles"
+      },
+      {
+        "sign_type": "pn",
+        "confidence": 0.5720396041870117,
+        "bbox": [
+          868,
+          364,
+          888,
+          384
+        ],
+        "relative_position": "right",
+        "distance": "medium",
+        "raw_class_name": "pn",
+        "display_name": "No stopping and standing"
+      }
+    ],
+    "count": 3
   }
 }

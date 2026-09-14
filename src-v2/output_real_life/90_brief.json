@@ -1,5 +1,6 @@
 {
   "lane_count": 2,
+  "order": "left to right",
   "ego_lane": {
     "position": "1/2",
     "confidence": 0.95
@@ -17,5 +18,24 @@
     "type": "curve",
     "severity": "gentle",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "p23",
+        "confidence": 0.8559449315071106,
+        "bbox": [
+          920,
+          290,
+          962,
+          330
+        ],
+        "relative_position": "right",
+        "distance": "medium",
+        "raw_class_name": "p23",
+        "display_name": "No left turn"
+      }
+    ],
+    "count": 1
   }
 }

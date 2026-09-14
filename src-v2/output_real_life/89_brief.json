@@ -1,5 +1,6 @@
 {
   "lane_count": 0,
+  "order": "left to right",
   "ego_lane": {
     "position": "unknown",
     "confidence": 0.0
@@ -17,5 +18,24 @@
     "type": "unknown",
     "severity": "unknown",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "pn",
+        "confidence": 0.7227388024330139,
+        "bbox": [
+          597,
+          353,
+          616,
+          373
+        ],
+        "relative_position": "center",
+        "distance": "medium",
+        "raw_class_name": "pn",
+        "display_name": "No stopping and standing"
+      }
+    ],
+    "count": 1
   }
 }

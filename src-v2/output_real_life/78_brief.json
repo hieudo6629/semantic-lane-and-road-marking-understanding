@@ -1,5 +1,6 @@
 {
   "lane_count": 1,
+  "order": "left to right",
   "ego_lane": {
     "position": "1/1",
     "confidence": 0.95
@@ -17,5 +18,38 @@
     "type": "straight",
     "severity": "none",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "ph",
+        "confidence": 0.9609808921813965,
+        "bbox": [
+          771,
+          164,
+          811,
+          204
+        ],
+        "relative_position": "center",
+        "distance": "far",
+        "raw_class_name": "ph",
+        "display_name": "ph"
+      },
+      {
+        "sign_type": "p23",
+        "confidence": 0.9032466411590576,
+        "bbox": [
+          651,
+          171,
+          701,
+          221
+        ],
+        "relative_position": "center",
+        "distance": "far",
+        "raw_class_name": "p23",
+        "display_name": "No left turn"
+      }
+    ],
+    "count": 2
   }
 }

@@ -1,5 +1,6 @@
 {
   "lane_count": 1,
+  "order": "left to right",
   "ego_lane": {
     "position": "1/1",
     "confidence": 0.8
@@ -17,5 +18,52 @@
     "type": "straight",
     "severity": "none",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "pl70",
+        "confidence": 0.9616633653640747,
+        "bbox": [
+          440,
+          118,
+          495,
+          172
+        ],
+        "relative_position": "center",
+        "distance": "far",
+        "raw_class_name": "pl70",
+        "display_name": "Maximum speed limit 70 km/h"
+      },
+      {
+        "sign_type": "pl50",
+        "confidence": 0.9081569910049438,
+        "bbox": [
+          438,
+          200,
+          494,
+          253
+        ],
+        "relative_position": "center",
+        "distance": "medium",
+        "raw_class_name": "pl50",
+        "display_name": "Maximum speed limit 50 km/h"
+      },
+      {
+        "sign_type": "pn",
+        "confidence": 0.8852159976959229,
+        "bbox": [
+          436,
+          283,
+          493,
+          339
+        ],
+        "relative_position": "center",
+        "distance": "medium",
+        "raw_class_name": "pn",
+        "display_name": "No stopping and standing"
+      }
+    ],
+    "count": 3
   }
 }

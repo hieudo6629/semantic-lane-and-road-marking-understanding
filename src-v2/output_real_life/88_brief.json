@@ -1,5 +1,6 @@
 {
   "lane_count": 0,
+  "order": "left to right",
   "ego_lane": {
     "position": "unknown",
     "confidence": 0.0
@@ -17,5 +18,24 @@
     "type": "unknown",
     "severity": "unknown",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "p26",
+        "confidence": 0.728446364402771,
+        "bbox": [
+          1002,
+          48,
+          1062,
+          105
+        ],
+        "relative_position": "right",
+        "distance": "far",
+        "raw_class_name": "p26",
+        "display_name": "No entry for trucks and buses"
+      }
+    ],
+    "count": 1
   }
 }

@@ -16,11 +16,11 @@ class LaneReasoner:
     by examining the geometry at the bottom of the image (where the vehicle is).
     """
 
-    def __init__(self, vehicle_position_y_ratio=0.95):
+    def __init__(self, vehicle_position_y_ratio=0.92):
         """
         Args:
             vehicle_position_y_ratio: y-position of vehicle as ratio of image height
-                                     (0.95 = near bottom, 1.0 = very bottom)
+                                     (0.92 = near bottom, 1.0 = very bottom)
         """
         self.vehicle_position_y_ratio = vehicle_position_y_ratio
 

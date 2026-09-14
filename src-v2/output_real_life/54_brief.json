@@ -1,5 +1,6 @@
 {
   "lane_count": 0,
+  "order": "left to right",
   "ego_lane": {
     "position": "unknown",
     "confidence": 0.0
@@ -17,5 +18,24 @@
     "type": "unknown",
     "severity": "unknown",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "w",
+        "confidence": 0.8368664383888245,
+        "bbox": [
+          941,
+          292,
+          988,
+          334
+        ],
+        "relative_position": "right",
+        "distance": "medium",
+        "raw_class_name": "w",
+        "display_name": "w"
+      }
+    ],
+    "count": 1
   }
 }

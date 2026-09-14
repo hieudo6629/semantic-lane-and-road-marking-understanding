@@ -1,15 +1,17 @@
 """
 Kiểm chứng: model VLM có tự phát hiện được ngữ nghĩa làn đường từ ẢNH THÔ
-chính xác tới đâu, so với tầng UFLD-v2 + xử lý ngữ nghĩa hiện tại (output-v3/
+chính xác tới đâu, so với tầng UFLD-v2 + xử lý ngữ nghĩa hiện tại (output-v4/
 <tên>_brief.json)?
 
 Gửi CHỈ ảnh (không kèm JSON nào) cho model VLM qua NVIDIA NIM, yêu cầu trả
 về JSON đúng schema của <tên>_brief.json hiện tại (xem
-analysis/scene_summarizer.py):
-    lane_count, ego_lane{position, confidence},
+analysis/scene_summarizer.py, đã bổ sung "order" và "traffic_signs"):
+    lane_count, order,
+    ego_lane{position, confidence},
     vehicle_offset{direction, magnitude, offset_percent},
     neighbor_lanes{left_count, right_count},
-    road_shape{type, severity, direction}
+    road_shape{type, severity, direction},
+    traffic_signs{detected[{sign_type, relative_position, distance}], count}
 
 Output mỗi ảnh lưu 1 file <tên>_llm_brief.json (nếu parse JSON thành công)
 hoặc <tên>_llm_brief.txt (nếu model trả về không phải JSON hợp lệ - vẫn lưu
@@ -90,6 +92,22 @@ clearly visible):
    - direction (string or null): "left" or "right" if type is "curve",
      otherwise null.
 
+6. order (string)
+   - Always the fixed string "left to right" - lane_count, ego_lane.position,
+     and neighbor_lanes above are all counted/ordered from left to right as
+     seen in the image. Just copy this fixed value, it is not something to
+     visually detect.
+
+7. traffic_signs
+   - detected (array): one entry per traffic sign or traffic light clearly
+     visible in the image (empty array if none). Each entry:
+       - sign_type (string): a short plain-language description of the sign
+         (e.g. "speed limit 60", "no entry", "pedestrian crossing warning",
+         "red traffic light"). Do not invent signs that are not visible.
+       - relative_position (string): one of "left", "center", "right".
+       - distance (string): one of "near", "medium", "far".
+   - count (integer): total number of entries in the detected list above.
+
 If a field cannot be reliably determined from the image, use "unknown" (or
 null where the field allows it) instead of guessing.
 
@@ -100,11 +118,13 @@ code fences, no explanation, no extra text, in EXACTLY this structure:
   "ego_lane": {"position": "<string>", "confidence": <float>},
   "vehicle_offset": {"direction": "<string>", "magnitude": "<string>", "offset_percent": <number or null>},
   "neighbor_lanes": {"left_count": <int>, "right_count": <int>},
-  "road_shape": {"type": "<string>", "severity": "<string>", "direction": "<string or null>"}
+  "road_shape": {"type": "<string>", "severity": "<string>", "direction": "<string or null>"},
+  "order": "left to right",
+  "traffic_signs": {"detected": [{"sign_type": "<string>", "relative_position": "<string>", "distance": "<string>"}], "count": <int>}
 }
 """
 
-REQUIRED_KEYS = ("lane_count", "ego_lane", "vehicle_offset", "neighbor_lanes", "road_shape")
+REQUIRED_KEYS = ("lane_count", "ego_lane", "vehicle_offset", "neighbor_lanes", "road_shape", "order", "traffic_signs")
 
 
 def _extract_json(raw_text: str) -> Optional[dict]:
@@ -175,6 +195,10 @@ def run_batch(args) -> None:
         os.path.splitext(n)[0]
         for n in os.listdir(args.input_dir)
         if n.lower().endswith(IMAGE_EXTENSIONS) and not n.startswith("_")
+        # "_observed" - quy ước đặt tên riêng cho ảnh crop thử nghiệm (đo tỉ lệ
+        # rho, xem mục 3.3 luận văn), KHÔNG phải ảnh thuộc bộ N=200 đánh giá -
+        # loại khỏi batch để không lẫn vào kết quả tự nhận diện của VLM.
+        and "_observed" not in n
     )
     if args.stems:
         wanted = [s.strip() for s in args.stems.split(",") if s.strip()]
@@ -247,7 +271,7 @@ def main() -> None:
     parser.add_argument("--base-url", type=str, default=DEFAULT_BASE_URL, help=f"Mặc định: {DEFAULT_BASE_URL}")
     parser.add_argument("--api-key", type=str, default=os.environ.get("NVIDIA_API_KEY"), help="Mặc định đọc từ biến môi trường NVIDIA_API_KEY")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL)
-    parser.add_argument("--max-tokens", type=int, default=300, help="Output là JSON ngắn gọn nên không cần nhiều token")
+    parser.add_argument("--max-tokens", type=int, default=500, help="Output là JSON ngắn gọn nên không cần nhiều token (nâng từ 300 lên 500 sau khi thêm trường traffic_signs, có thể chứa nhiều phần tử)")
     parser.add_argument("--temperature", type=float, default=0.1, help="Thấp hơn mặc định của llm_batch_client vì đây là tác vụ nhận diện, cần tính nhất quán cao, không cần sáng tạo văn phong")
     parser.add_argument("--top-p", type=float, default=0.7)
     parser.add_argument("--frequency-penalty", type=float, default=0.0)

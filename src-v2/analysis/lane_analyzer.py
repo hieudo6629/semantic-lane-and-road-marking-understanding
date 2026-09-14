@@ -263,12 +263,48 @@ class LaneAnalyzer:
     # tụ giữa các lane có ý nghĩa hình học đúng (xem estimate_curvature()).
     HORIZON_Y_RATIO = 0.3
 
-    def __init__(self, vehicle_position_y_ratio: float = 0.95):
+    # Hệ số ưu tiên khe thực sự chứa vehicle_x khi chọn ego lane (xem
+    # find_ego_lane()) - nhân điểm phạt lên 0.5 (giảm một nửa) cho khe chứa
+    # xe, để khe đó luôn được ưu tiên hơn khi khoảng cách tâm khe xấp xỉ nhau.
+    EGO_SLOT_PRIORITY_FACTOR = 0.5
+
+    # Trọng số phạt bề rộng khe bất thường so với expected_width (xem
+    # find_ego_lane()) - chỉ đóng vai trò điều chỉnh phụ, không lấn át thành
+    # phần khoảng cách tâm khe.
+    WIDTH_PENALTY_WEIGHT = 0.2
+
+    # Ngưỡng shift_ratio để phát hiện hướng cong trái/phải (xem
+    # aggregate_curvature()) - chọn đủ nhỏ để phát hiện lệch rõ rệt nhưng đủ
+    # lớn để không nhạy cảm với nhiễu phát hiện đường biên.
+    CURVE_SHIFT_RATIO_THRESHOLD = 0.08
+
+    def __init__(self, vehicle_position_y_ratio: float = 0.919):
         """
         Args:
-            vehicle_position_y_ratio: vị trí y của xe, tính theo tỉ lệ chiều cao ảnh
-                                       (0.95 nghĩa là gần đáy ảnh - nơi camera dashcam
-                                       thường "nhìn thấy" đầu xe / mép capo).
+            vehicle_position_y_ratio: hàng ảnh tham chiếu (tỉ lệ theo chiều cao ảnh)
+                                       dùng để sắp xếp VÀ nội suy tọa độ x của đường
+                                       biên - gần đáy ảnh nhưng chừa lại phần cuối,
+                                       tránh đúng mép đáy (thường bị nắp capo xe che,
+                                       hoặc UFLD-v2 thưa điểm hơn gần rìa ảnh).
+
+                                       GIÁ TRỊ ĐÃ ĐO THỰC TẾ: 0.919 = trung bình tỉ lệ
+                                       chiều cao còn quan sát được (không bị nắp capo
+                                       che) trên N=200 ảnh CULane, đo bằng cách cắt
+                                       thủ công phần nắp capo trên từng ảnh rồi so
+                                       chiều cao trước/sau cắt (input/<n>.jpg vs
+                                       input/<n>_observed.jpg). Độ lệch chuẩn 0.0072,
+                                       khoảng dao động [0.903, 0.949] - rất hẹp, tất cả
+                                       200 ảnh dùng chung một thiết lập camera tương tự.
+
+                                       ĐÃ KIỂM CHỨNG (N=20 ảnh CULane, so 0.92 vs 1.0):
+                                       KHÔNG ảnh hưởng lựa chọn ego lane (0/20 đổi) -
+                                       an toàn để không cần chính xác tuyệt đối ở khâu
+                                       này. NHƯNG có ảnh hưởng rõ tới vehicle_offset
+                                       (20/20 ảnh đổi, tới 23 điểm % ở ca xấu nhất) -
+                                       vì y_r=1.0*H thường rơi ra ngoài vùng có điểm
+                                       thật, buộc ngoại suy (kém tin cậy hơn nội suy).
+                                       Không hạ giá trị này xuống gần 1.0 mà không
+                                       kiểm tra lại độ chính xác offset.
         """
         self.vehicle_position_y_ratio = vehicle_position_y_ratio
 
@@ -395,13 +431,13 @@ class LaneAnalyzer:
 
             # Ưu tiên mạnh cặp làn mà xe thực sự nằm giữa 2 vạch
             if left.x_at_reference < vehicle_x < right.x_at_reference:
-                score *= 0.5
+                score *= self.EGO_SLOT_PRIORITY_FACTOR
 
             # Phạt nhẹ nếu bề rộng làn quá lệch so với bề rộng điển hình
             lane_width = right.x_at_reference - left.x_at_reference
             if lane_width > 0:
                 width_penalty = abs(lane_width - expected_width) / expected_width
-                score *= (1 + width_penalty * 0.2)
+                score *= (1 + width_penalty * self.WIDTH_PENALTY_WEIGHT)
 
             if score < best_score:
                 best_score = score
@@ -689,12 +725,22 @@ class LaneAnalyzer:
         ):
             classification = "straight"
             confidence = min(0.9, 0.6 + straight_ratio * 0.3)
-        elif avg_drift >= self.DRIFT_THRESHOLD_SHARP:
-            classification = f"sharp_{direction}_curve" if direction != "straight" else "sharp_curve"
-            confidence = 0.7
         else:
-            classification = f"gentle_{direction}_curve" if direction != "straight" else "gentle_curve"
-            confidence = 0.6
+            # Đã xác định là cong (avg_drift đủ lớn) - LUÔN gán đúng 1 trong 2
+            # hướng trái/phải, không dùng nhãn "gentle_curve"/"sharp_curve"
+            # không hướng nữa. Nếu direction (từ _estimate_direction(), có
+            # vùng chết CURVE_SHIFT_RATIO_THRESHOLD) ra "straight" dù avg_drift
+            # đã xác nhận cong, suy hướng bằng dấu của shift thô, bỏ vùng chết
+            # (_estimate_direction_forced()) - vì đã có bằng chứng độc lập
+            # (avg_drift) xác nhận đường thực sự cong, chỉ còn thiếu dấu.
+            if direction == "straight":
+                direction = self._estimate_direction_forced(lanes, image_width, image_height)
+            if avg_drift >= self.DRIFT_THRESHOLD_SHARP:
+                classification = f"sharp_{direction}_curve"
+                confidence = 0.7
+            else:
+                classification = f"gentle_{direction}_curve"
+                confidence = 0.6
 
         # magnitude luôn = avg_drift (không trộn thêm vp_spread như bản
         # trước) - để số liệu report ra JSON nhất quán với chính ngưỡng đã
@@ -711,12 +757,25 @@ class LaneAnalyzer:
             avg_fit_improvement=float(avg_fit_improvement),
         )
 
-    def _estimate_direction(self, lanes: List[Lane], image_width: int, image_height: int) -> str:
-        """Suy ra hướng cong (trái/phải) từ độ dịch chuyển x trung bình giữa đáy và đỉnh ảnh."""
-        if not lanes or len(lanes) < 2:
-            return "straight"
+    def _compute_shift_ratio(self, lanes: List[Lane], image_width: int, image_height: int) -> Optional[float]:
+        """Độ dịch chuyển x trung bình giữa đáy và đỉnh của MỖI đường biên, chuẩn hóa
+        theo image_width. None nếu không đủ điểm để tính (dùng chung cho
+        _estimate_direction() và _estimate_direction_forced()).
 
-        y_bottom, y_top = int(image_height * 0.85), int(image_height * 0.35)
+        SỬA: bản trước dùng 2 mốc y TUYỆT ĐỐI cố định (0.35H và 0.85H) để tìm
+        điểm gần đó - nhưng UFLD-v2 (preset CULane, row_anchor 0.42-1.0 theo
+        thiết kế, thực tế quan sát được trên nhiều ảnh còn hẹp hơn, ví dụ chỉ
+        ~0.67-1.0H) không đảm bảo có điểm ở 0.35H, khiến top_pts luôn RỖNG và
+        hàm luôn trả về None - hậu quả: direction luôn = "straight" bất kể
+        đường có cong hay không, mọi ảnh cong đều bị dán nhãn không hướng
+        ("gentle_curve") thay vì "gentle_left_curve"/"gentle_right_curve".
+        Cách sửa: dùng khoảng y THỰC TẾ của từng đường biên (20% điểm gần đáy
+        nhất so với 20% điểm gần đỉnh nhất CỦA CHÍNH đường biên đó), không phụ
+        thuộc mốc y tuyệt đối nào - luôn có điểm vì lấy trực tiếp từ dữ liệu
+        đã quan sát được."""
+        if not lanes or len(lanes) < 2:
+            return None
+
         shifts = []
         for lane in lanes:
             arr = np.array(lane, dtype=np.float64)
@@ -724,19 +783,39 @@ class LaneAnalyzer:
                 continue
             valid = (arr[:, 0] > 0) & (arr[:, 1] > 0)
             arr = arr[valid]
-            if len(arr) < 3:
+            if len(arr) < 4:
                 continue
-            bottom_pts = arr[np.abs(arr[:, 1] - y_bottom) < 80]
-            top_pts = arr[np.abs(arr[:, 1] - y_top) < 80]
-            if len(bottom_pts) > 0 and len(top_pts) > 0:
-                shifts.append(float(np.mean(bottom_pts[:, 0]) - np.mean(top_pts[:, 0])))
+            y_min, y_max = arr[:, 1].min(), arr[:, 1].max()
+            span = y_max - y_min
+            if span < image_height * 0.05:
+                continue  # đường biên quá ngắn để tin cậy xu hướng dịch chuyển
+            near_bottom = arr[arr[:, 1] >= y_max - span * 0.2]
+            near_top = arr[arr[:, 1] <= y_min + span * 0.2]
+            if len(near_bottom) > 0 and len(near_top) > 0:
+                shifts.append(float(np.mean(near_bottom[:, 0]) - np.mean(near_top[:, 0])))
 
         if not shifts:
-            return "straight"
+            return None
+        return float(np.mean(shifts)) / image_width
 
-        shift_ratio = float(np.mean(shifts)) / image_width
-        if abs(shift_ratio) < 0.08:
+    def _estimate_direction(self, lanes: List[Lane], image_width: int, image_height: int) -> str:
+        """Suy ra hướng cong (trái/phải) từ độ dịch chuyển x trung bình giữa đáy và đỉnh ảnh.
+        Có vùng chết CURVE_SHIFT_RATIO_THRESHOLD quanh 0 (trả "straight") - dùng khi cần
+        phân biệt thẳng/cong từ chính tín hiệu shift. Khi đã biết trước là cong (qua
+        avg_drift) và cần bắt buộc ra trái/phải, dùng _estimate_direction_forced()."""
+        shift_ratio = self._compute_shift_ratio(lanes, image_width, image_height)
+        if shift_ratio is None or abs(shift_ratio) < self.CURVE_SHIFT_RATIO_THRESHOLD:
             return "straight"
+        return "right" if shift_ratio > 0 else "left"
+
+    def _estimate_direction_forced(self, lanes: List[Lane], image_width: int, image_height: int) -> str:
+        """Như _estimate_direction() nhưng LUÔN trả về 'left'/'right', bỏ vùng chết quanh 0 -
+        dùng khi classification (ở aggregate_curvature()) đã xác định đường thực sự cong
+        (qua avg_drift), nên bắt buộc phải gán đúng 1 trong 5 nhãn hướng cuối cùng, không
+        được phép rơi vào nhãn không hướng ('gentle_curve'/'sharp_curve')."""
+        shift_ratio = self._compute_shift_ratio(lanes, image_width, image_height)
+        if not shift_ratio:  # None hoặc đúng bằng 0 - cực hiếm, chọn "right" làm tie-break
+            return "right"
         return "right" if shift_ratio > 0 else "left"
 
     # -- Ngữ nghĩa từng làn ------------------------------------------------

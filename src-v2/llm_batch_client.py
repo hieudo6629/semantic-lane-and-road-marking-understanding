@@ -8,9 +8,12 @@ Hỗ trợ 3 chế độ (chọn bằng --mode):
     json_only   : chỉ gửi prompt có NHÚNG JSON (không kèm ảnh)
     image_json  : gửi cả ẢNH và prompt có NHÚNG JSON
 
-Ảnh (<tên>.jpg) và JSON (<tên>.json) nằm ở 2 thư mục riêng, khớp nhau theo
-tên file (không phần mở rộng). Output lưu vào thư mục thứ 3, mỗi mục 1 file
-<tên>.txt (+ 1 file _summary.json tổng hợp toàn batch).
+Ảnh (<tên>.jpg) và JSON (<tên>.json, dùng để liệt kê danh sách ảnh cần xử lý)
+nằm ở 2 thư mục riêng, khớp nhau theo tên file (không phần mở rộng). Nội dung
+THỰC SỰ gửi cho LLM ở chế độ json_only/image_json là <tên>_brief.json (JSON
+RÚT GỌN, cùng thư mục --json-dir), không phải <tên>.json thô - xem
+process_one(). Output lưu vào thư mục thứ 3, mỗi mục 1 file <tên>.txt (+ 1
+file _summary.json tổng hợp toàn batch).
 
 Cần biến môi trường NVIDIA_API_KEY (hoặc truyền --api-key) trước khi chạy:
     export NVIDIA_API_KEY="nvapi-..."          # bash
@@ -408,7 +411,13 @@ def process_one(args, stem: str) -> None:
 
     json_data = None
     if args.mode in ("json_only", "image_json"):
-        json_path = os.path.join(args.json_dir, f"{stem}.json")
+        # Dùng JSON RÚT GỌN (_brief.json) làm input cho VLM, không dùng JSON
+        # thô (<stem>.json) nữa - xem lý do ở scene_summarizer.py và mục 3.4
+        # luận văn (json_brief nay đã có traffic_signs, đủ cho rubric đánh giá
+        # tiêu chí biển báo/quy tắc ở mọi chế độ input). find_stems() vẫn liệt
+        # kê stem dựa trên <stem>.json thô (không đổi) để không nhầm _brief.json
+        # thành 1 "ảnh" riêng - chỉ đổi FILE THỰC SỰ ĐƯỢC ĐỌC ở đây.
+        json_path = os.path.join(args.json_dir, f"{stem}_brief.json")
         with open(json_path, "r", encoding="utf-8") as f:
             json_data = json.load(f)
 

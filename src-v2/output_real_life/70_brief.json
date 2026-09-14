@@ -1,5 +1,6 @@
 {
   "lane_count": 0,
+  "order": "left to right",
   "ego_lane": {
     "position": "unknown",
     "confidence": 0.0
@@ -17,5 +18,9 @@
     "type": "unknown",
     "severity": "unknown",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [],
+    "count": 0
   }
 }

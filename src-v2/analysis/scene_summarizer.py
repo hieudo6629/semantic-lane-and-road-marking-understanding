@@ -7,8 +7,10 @@ Bối cảnh: JSON thô (TrafficScene.to_dict()) lưu đầy đủ số liệu k
 để debug/tái tạo nhưng THỪA THÃI khi đưa cho LLM: LLM không cần biết
 offset_pixels=97.35, chỉ cần biết "xe lệch nhẹ về bên phải". Module này KHÔNG
 thay thế JSON thô (vẫn giữ nguyên, xem batch_process.py) mà tạo thêm 1 bản
-rút gọn riêng, chỉ gồm 4 nhóm thông tin: số làn, vị trí ego lane + độ lệch
-tâm, số làn trái/phải, hình dạng đường.
+rút gọn riêng, gồm: số làn, quy ước thứ tự sắp xếp làn ("order"), vị trí ego
+lane + độ lệch tâm, số làn trái/phải, hình dạng đường, và biển báo giao thông
+(copy nguyên trường "traffic_signs" từ JSON thô - cần thiết vì rubric đánh
+giá (mục 3.7 luận văn) có tiêu chí riêng về biển báo).
 
 CỐ TÌNH KHÔNG đưa vào bản rút gọn: road_environment, active_speed_limit,
 recommendation - các trường này trong JSON thô đang dựa trên heuristic
@@ -90,6 +92,7 @@ def summarize_scene(scene_dict: Dict) -> Dict:
     ego_lane = lane.get("ego_lane", {})
     lane_classification = lane.get("lane_classification", {})
     vehicle_offset = lane.get("vehicle_offset", {})
+    traffic_signs = scene_dict.get("traffic_signs", {})
 
     lane_count = geometry.get("lane_count", 0)
     left_count = lane_classification.get("left_neighbor_count", 0)
@@ -101,6 +104,7 @@ def summarize_scene(scene_dict: Dict) -> Dict:
 
     return {
         "lane_count": lane_count,
+        "order": "left to right",
         "ego_lane": {
             "position": ego_lane_position,
             "confidence": round(ego_lane.get("confidence", 0.0), 2),
@@ -108,4 +112,5 @@ def summarize_scene(scene_dict: Dict) -> Dict:
         "vehicle_offset": _summarize_offset(vehicle_offset),
         "neighbor_lanes": {"left_count": left_count, "right_count": right_count},
         "road_shape": _summarize_road_shape(road.get("road_type", "unknown")),
+        "traffic_signs": traffic_signs,
     }

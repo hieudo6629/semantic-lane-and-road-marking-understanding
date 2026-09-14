@@ -1,5 +1,6 @@
 {
   "lane_count": 0,
+  "order": "left to right",
   "ego_lane": {
     "position": "unknown",
     "confidence": 0.0
@@ -17,5 +18,52 @@
     "type": "unknown",
     "severity": "unknown",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "p11",
+        "confidence": 0.9576882719993591,
+        "bbox": [
+          885,
+          113,
+          968,
+          193
+        ],
+        "relative_position": "right",
+        "distance": "medium",
+        "raw_class_name": "p11",
+        "display_name": "No horn blowing"
+      },
+      {
+        "sign_type": "w",
+        "confidence": 0.896946907043457,
+        "bbox": [
+          879,
+          196,
+          966,
+          272
+        ],
+        "relative_position": "right",
+        "distance": "medium",
+        "raw_class_name": "w",
+        "display_name": "w"
+      },
+      {
+        "sign_type": "pl30",
+        "confidence": 0.872173547744751,
+        "bbox": [
+          888,
+          2,
+          971,
+          81
+        ],
+        "relative_position": "right",
+        "distance": "medium",
+        "raw_class_name": "pl30",
+        "display_name": "Maximum speed limit 30 km/h"
+      }
+    ],
+    "count": 3
   }
 }

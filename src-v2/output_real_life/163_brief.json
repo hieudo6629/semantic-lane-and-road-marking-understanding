@@ -1,5 +1,6 @@
 {
   "lane_count": 2,
+  "order": "left to right",
   "ego_lane": {
     "position": "2/2",
     "confidence": 0.95
@@ -17,5 +18,24 @@
     "type": "straight",
     "severity": "none",
     "direction": null
+  },
+  "traffic_signs": {
+    "detected": [
+      {
+        "sign_type": "ip",
+        "confidence": 0.7892217040061951,
+        "bbox": [
+          732,
+          328,
+          753,
+          349
+        ],
+        "relative_position": "center",
+        "distance": "medium",
+        "raw_class_name": "ip",
+        "display_name": "Pedestrian crossing"
+      }
+    ],
+    "count": 1
   }
 }

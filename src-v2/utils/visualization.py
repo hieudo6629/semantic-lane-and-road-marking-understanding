@@ -39,6 +39,7 @@ import cv2
 import numpy as np
 
 from analysis.lane_analyzer import Lane, LaneAnalysisResult
+from analysis.scene_summarizer import _summarize_offset
 from perception.sign_detector import DetectedSign
 from utils.logger import get_logger
 
@@ -180,11 +181,11 @@ class SceneVisualizer:
         font = cv2.FONT_HERSHEY_SIMPLEX
         y = 30
         ego = lane_result.ego_lane
-        offset = lane_result.vehicle_offset
+        offset_summary = _summarize_offset(lane_result.vehicle_offset.to_dict())
 
         lines = [
             f"Ego Lanes: {ego.left_boundary_index}-{ego.right_boundary_index} (conf {ego.confidence:.2f})",
-            f"Offset: {offset.offset_pixels:.1f} px ({offset.direction})",
+            f"Offset: {offset_summary['direction']}, {offset_summary['magnitude']} ({offset_summary['offset_percent']}%)",
             f"Left neighbors: {len(lane_result.left_neighbor_indices)}, "
             f"Right neighbors: {len(lane_result.right_neighbor_indices)}",
             f"Road curvature: {lane_result.aggregated_curvature.classification}",
