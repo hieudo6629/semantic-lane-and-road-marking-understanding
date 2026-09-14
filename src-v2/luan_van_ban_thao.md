@@ -109,14 +109,14 @@ Mặc dù đã có nhiều cố gắng trong quá trình nghiên cứu và trìn
 | STT | Ký hiệu | Tên bảng |
 |---|---|---|
 | 1 | Bảng 2.1 | Tổng hợp các công trình liên quan về LLM/VLM cho lái xe |
-| 2 | Bảng 3.0 | Schema gán nhãn ground truth thủ công cho ngữ nghĩa làn đường |
-| 3 | Bảng 3.0b | Vai trò thực nghiệm của từng bộ dữ liệu và mục sử dụng |
-| 4 | Bảng 3.1 | Tổng hợp tham số cấu hình của mô-đun phân tích ngữ nghĩa |
-| 5 | Bảng 3.1b | Kết quả phân tích độ nhạy ±10% các tham số heuristic |
-| 6 | Bảng 3.2 | Tổng hợp các trường trong SSI: nguồn, biểu diễn, mục đích, độ tin cậy |
-| 7 | Bảng 3.4 | Cấu hình gọi API dùng chung cho ba mô hình ứng viên và ba chế độ input |
-| 8 | Bảng 3.5 | Mô tả từng mức điểm trong thang đánh giá 1–5 |
-| 9 | Bảng 3.6 | Điểm và lý do của judge Gemini cho ảnh minh họa (mục 3.8) |
+| 2 | Bảng 3.1 | Các trường thông tin được gán nhãn thủ công (ground truth) |
+| 3 | Bảng 3.2 | Tổng hợp các bộ dữ liệu sử dụng trong nghiên cứu |
+| 4 | Bảng 3.3 | Tổng hợp tham số cấu hình của mô-đun phân tích ngữ nghĩa |
+| 5 | Bảng 3.3b | Kết quả phân tích độ nhạy ±10% các tham số heuristic |
+| 6 | Bảng 3.4 | Tổng hợp các trường trong SSI: nguồn, biểu diễn, mục đích, độ tin cậy |
+| 7 | Bảng 3.5 | Cấu hình gọi API dùng chung cho ba mô hình ứng viên và ba chế độ input |
+| 8 | Bảng 3.6 | Mô tả từng mức điểm trong thang đánh giá 1–5 |
+| 9 | Bảng 3.7 | Điểm và lý do của judge Gemini cho ảnh minh họa (mục 3.8) |
 | 10 | Bảng 4.1 | Độ chính xác module hiểu làn đường trên CULane (N=200) |
 | 11 | Bảng 4.2 | So sánh hiệu năng module hiểu làn đường theo nhóm có/không vạch kẻ đường rõ |
 | 12 | Bảng 4.3 | Đối chiếu module hiểu làn đường và biển báo giữa CULane và dữ liệu real-life độc lập |
@@ -331,31 +331,44 @@ Việc gọi giai đoạn 2 là "mô-đun" — thay vì dùng chung tên "bướ
 
   Do giới hạn thời gian phiên làm việc của môi trường huấn luyện (Kaggle), quá trình bị ngắt giữa chừng ở epoch 82 và được chạy tiếp (resume) từ checkpoint gần nhất cho tới khi hoàn tất. Đây là một bước tinh chỉnh tiêu chuẩn, quy mô nhẹ so với việc huấn luyện hoặc tinh chỉnh một VLM/LLM trên dữ liệu lái xe quy mô lớn như ở các hệ end-to-end được khảo sát ở mục 2.2.3 (DriveGPT4, DriveLM, LMDrive, SafeRoute). Định hướng training-free của đề tài (Tóm tắt) áp dụng riêng cho bước xử lý suy luận VLM (mục 3.6); bước xử lý nhận diện không nằm trong phạm vi claim đó — UFLD-v2 dùng nguyên bản pretrained, còn YOLOv8n có đúng một bước tinh chỉnh nhẹ này.
 
-## 3.2. Dữ liệu
+## 3.2. Dữ liệu nghiên cứu
 
-**Bộ dữ liệu chính (CULane).** 200 ảnh được lấy ngẫu nhiên từ dataset CULane (độ phân giải 1640×590), đại diện cho các tình huống đô thị đa dạng: đường thẳng, cua nhẹ, giao lộ, mật độ giao thông khác nhau. Ground truth được gán nhãn thủ công bởi chính tác giả (manual annotation by the author) cho toàn bộ 200/200 ảnh, theo schema ở Bảng 3.0. Toàn bộ kết quả trong Chương 4 — cả các kết quả dựa trên ground truth lẫn các kết quả dựa trên LLM-as-a-judge — sử dụng đầy đủ N=200.
+### 3.2.1. Dữ liệu CULane
 
-**Bảng 3.0.** Schema gán nhãn ground truth thủ công cho ngữ nghĩa làn đường (CULane và real-life).
+CULane [6] là dataset chuẩn công khai cho bài toán hiểu làn đường, dùng làm nguồn dữ liệu chính của đề tài. 200 ảnh được chọn ngẫu nhiên từ CULane, độ phân giải 1640×590, đại diện cho các tình huống đô thị đa dạng: đường thẳng, cua nhẹ, giao lộ, mật độ giao thông khác nhau. Các ảnh này được dùng để đánh giá khả năng hiểu làn đường của pipeline (mục 4.1) và làm nguồn ảnh cho toàn bộ thực nghiệm VLM ở Chương 4.
+
+Tác giả gán ground truth thủ công cho toàn bộ 200/200 ảnh, theo các trường ở Bảng 3.1.
+
+**Bảng 3.1.** Các trường thông tin được gán nhãn thủ công (ground truth).
 
 | Trường | Ý nghĩa |
 |---|---|
-| Lane count | Số làn thực tế cùng chiều quan sát được trong ảnh |
-| Ego lane | Vị trí làn ego thực tế, làm căn cứ đối chiếu độ chính xác xác định làn ego của pipeline |
-| Road shape | Hình dạng đường thực tế (thẳng/cong nhẹ/cong gắt), kèm hướng cong |
-| Wrong lane | Số làn bị pipeline phát hiện nhầm, không tồn tại trong thực tế |
-| Opposite lane | Số làn ngược chiều bị pipeline gộp nhầm vào làn cùng chiều |
+| Lane count | Số làn đường cùng chiều thực tế quan sát được |
+| Ego lane | Vị trí làn ego thực tế |
+| Road shape | Hình dạng thực tế của đường |
+| Curve direction | Hướng cong của đường, nếu có |
 
-Với module biển báo, cùng tác giả gán nhãn thủ công thêm số biển báo thật và đối chiếu với số detection đúng/sai của pipeline (mục 4.3).
+Với module biển báo, CULane quá thưa biển báo để xây dựng ground truth độc lập theo số lượng (chỉ 12/200 ảnh có detection, tổng cộng 13 lượt phát hiện — mục 4.3). Thay vào đó, tác giả đối chiếu thủ công đúng loại biển báo (trong 50 lớp đã fine-tune, mục 3.2.2) cho từng lượt phát hiện mà pipeline thực sự trả về, làm căn cứ tính Accuracy phân loại (không tính được Recall do không rà soát biển bị bỏ sót trên toàn bộ 200 ảnh) ở mục 4.3.
 
-**Bộ dữ liệu kiểm chứng độc lập (real-life).** 200 khung hình được trích xuất từ video dashcam thực tế (độ phân giải 1280×720), gán nhãn thủ công bởi chính tác giả theo cùng schema ở Bảng 3.0. Mục đích của bộ dữ liệu này là kiểm chứng khả năng tổng quát hóa của hệ thống trên dữ liệu độc lập với dữ liệu huấn luyện của mô hình phát hiện làn đường.
+### 3.2.2. Dữ liệu TT100K
 
-**Bảng 3.0b.** Vai trò thực nghiệm của từng bộ dữ liệu và mục sử dụng tương ứng.
+TT100K [9] là benchmark biển báo giao thông quy mô lớn, được đề tài sử dụng cho bài toán phát hiện biển báo. Đề tài dùng một tập con 50 lớp biển báo phổ biến của TT100K để tinh chỉnh (fine-tune) YOLOv8n, khởi tạo từ checkpoint pretrained trên COCO; cấu hình huấn luyện chi tiết trình bày ở mục 3.1.
 
-| Bộ dữ liệu | Quy mô | Vai trò thực nghiệm | Mục sử dụng |
-|---|---|---|---|
-| CULane [6] | N=200 ảnh | Đánh giá module hiểu làn đường; nguồn ảnh duy nhất cho toàn bộ thực nghiệm VLM (3 chế độ input × 3 judge); nguồn hiệu chỉnh $\overline{\delta}_{thẳng}$, $\overline{\delta}_{gắt}$ | 3.3, 4.1, 4.4, 4.5, 4.6, 4.7, 4.9 |
-| TT100K [9] | Tập con 50 lớp phổ biến | Tinh chỉnh (fine-tune) YOLOv8n cho module biển báo, khởi tạo từ checkpoint pretrained COCO | 3.1, 4.3 |
-| Real-life (tự thu thập) | N=200 khung hình | Kiểm chứng độc lập khả năng tổng quát hóa ngoài domain huấn luyện của UFLD-v2, cho cả module hiểu làn đường/biển báo lẫn thí nghiệm VLM tự nhận diện | 4.2, 4.7 |
+### 3.2.3. Dữ liệu thực tế bổ sung
+
+200 khung hình được trích xuất từ video dashcam thực tế, độ phân giải 1280×720, gán nhãn thủ công theo cùng các trường ở Bảng 3.1. Mục đích của bộ dữ liệu này là đánh giá khả năng tổng quát hóa của pipeline trên dữ liệu thực tế khác với CULane (mục 4.2, 4.7).
+
+Với module biển báo, bộ dữ liệu này có mật độ biển báo đủ lớn (69 biển thật trên 44/200 ảnh) để xây dựng ground truth theo số lượng — làm căn cứ tính Precision/Recall ở mục 4.2. Bổ sung thêm, tác giả đối chiếu thủ công đúng loại biển báo cho từng lượt phát hiện mà pipeline thực sự trả về (52 lượt trên 34/200 ảnh), làm căn cứ tính Accuracy phân loại ở mục 4.2.
+
+### 3.2.4. Tổng hợp dữ liệu
+
+**Bảng 3.2.** Tổng hợp các bộ dữ liệu sử dụng trong nghiên cứu.
+
+| Bộ dữ liệu | Quy mô | Mục đích sử dụng |
+|---|---|---|
+| CULane [6] | 200 ảnh | Đánh giá module hiểu làn đường và cung cấp dữ liệu cho thí nghiệm VLM |
+| TT100K [9] | 50 lớp phổ biến | Fine-tune mô hình nhận diện biển báo |
+| Real-life (tự thu thập) | 200 khung hình | Đánh giá khả năng tổng quát hóa của pipeline trên dữ liệu thực tế |
 
 ## 3.3. Phân tích ngữ nghĩa làn đường
 
@@ -447,7 +460,7 @@ $$
 
 **Gán hướng cong — 5 nhãn cuối cùng.** $c$ ở trên chỉ phân loại theo *độ lớn* (thẳng/cong nhẹ/cong gắt). Một khi $c$ đã xác định đường thực sự cong (cong nhẹ hoặc cong gắt), hệ thống bắt buộc gán thêm đúng một *hướng* — trái hoặc phải — để tạo thành nhãn cuối cùng trong 5 loại: thẳng, cong nhẹ bên trái, cong nhẹ bên phải, cong gắt bên trái, cong gắt bên phải (lưu trong JSON dưới dạng `straight`/`gentle_left_curve`/`gentle_right_curve`/`sharp_left_curve`/`sharp_right_curve`); hệ thống không trả về nhãn "cong không rõ hướng". Hướng được suy từ dấu của tín hiệu shift đã mô tả ở trên; nếu $|\text{shift}| < \gamma$ (tín hiệu quá yếu để tự tin về hướng) trong khi $\overline{\delta}$/$\overline{\eta}$ đã xác nhận đường thực sự cong, hệ thống bỏ qua ngưỡng $\gamma$ và suy hướng trực tiếp từ dấu của shift thô — vì bằng chứng độ cong đã có sẵn, chỉ còn thiếu dấu; trường hợp cực hiếm hoàn toàn không tính được shift (đường biên quá ngắn), hệ thống mặc định "phải" làm tie-break. Trên N=200 ảnh CULane, cơ chế tie-break này chỉ cần dùng ở 2/26 ảnh được phân loại là cong (kết quả kiểm tra thủ công trên chính tập dữ liệu này).
 
-**Bảng 3.1.** Tổng hợp toàn bộ tham số cấu hình của mô-đun phân tích ngữ nghĩa, phân biệt tham số hiệu chỉnh bằng số liệu thực đo và tham số chọn theo lý lẽ thực tế (heuristic). Đây là bảng tra cứu nhanh; lý lẽ chi tiết cho từng tham số được trình bày trong phần văn bản tương ứng ở trên.
+**Bảng 3.3.** Tổng hợp toàn bộ tham số cấu hình của mô-đun phân tích ngữ nghĩa, phân biệt tham số hiệu chỉnh bằng số liệu thực đo và tham số chọn theo lý lẽ thực tế (heuristic). Đây là bảng tra cứu nhanh; lý lẽ chi tiết cho từng tham số được trình bày trong phần văn bản tương ứng ở trên.
 
 | Tham số | Giá trị | Vai trò | Căn cứ |
 |---|---|---|---|
@@ -469,9 +482,9 @@ $$
 | $\overline{\delta}_{gắt}$ | 0,06 | Ngưỡng phân loại hình dạng "cua gắt" | **Thực đo** trên CULane (xác nhận 0,0994) |
 | Ngưỡng $\overline{\eta}$ | 0,3 | Nâng hạng "thẳng" → "cong nhẹ" khi $\overline{\delta}$ chưa đủ rõ | Heuristic bổ sung |
 
-**Phân tích độ nhạy tham số heuristic.** Phần lớn tham số ở Bảng 3.1 không hiệu chỉnh bằng số liệu đo — câu hỏi tự nhiên là liệu kết quả cuối (làn ego nào được chọn, đường được phân loại hình dạng gì) có phụ thuộc cực đoan vào việc chọn đúng một giá trị cụ thể cho các tham số đó hay không. Để kiểm tra, bốn tham số có ảnh hưởng trực tiếp tới quyết định cuối — $\beta_i$, trọng số phạt bề rộng, $y_h$, $\gamma$ — được biến thiên $\pm10\%$ quanh giá trị mặc định, giữ nguyên toàn bộ output UFLD-v2 (chỉ chạy lại mô-đun phân tích ngữ nghĩa, không chạy lại tầng nhận diện), trên toàn bộ N=200 ảnh CULane. Với $\beta_i$ và trọng số phạt bề rộng — không có nhãn vị trí làn ego "đúng" độc lập để tính lại Accuracy trực tiếp, chỉ có nhãn đúng/sai cho lựa chọn gốc (mục 3.2) — chỉ số đo là **tỉ lệ ảnh đổi lựa chọn làn ego** trong đúng nhóm 172 ảnh đã được xác nhận đúng ở tham số mặc định (một cận dưới hợp lệ cho Accuracy còn giữ được: ảnh nào không đổi lựa chọn chắc chắn vẫn đúng). Với $y_h$ và $\gamma$ — có nhãn hình dạng đường độc lập (Bảng 3.0) — chỉ số đo là Accuracy nhóm thẳng/cong nhẹ/cong gắt tính lại trực tiếp trên cả N=200.
+**Phân tích độ nhạy tham số heuristic.** Phần lớn tham số ở Bảng 3.3 không hiệu chỉnh bằng số liệu đo — câu hỏi tự nhiên là liệu kết quả cuối (làn ego nào được chọn, đường được phân loại hình dạng gì) có phụ thuộc cực đoan vào việc chọn đúng một giá trị cụ thể cho các tham số đó hay không. Để kiểm tra, bốn tham số có ảnh hưởng trực tiếp tới quyết định cuối — $\beta_i$, trọng số phạt bề rộng, $y_h$, $\gamma$ — được biến thiên $\pm10\%$ quanh giá trị mặc định, giữ nguyên toàn bộ output UFLD-v2 (chỉ chạy lại mô-đun phân tích ngữ nghĩa, không chạy lại tầng nhận diện), trên toàn bộ N=200 ảnh CULane. Với $\beta_i$ và trọng số phạt bề rộng — không có nhãn vị trí làn ego "đúng" độc lập để tính lại Accuracy trực tiếp, chỉ có nhãn đúng/sai cho lựa chọn gốc (mục 3.2) — chỉ số đo là **tỉ lệ ảnh đổi lựa chọn làn ego** trong đúng nhóm 172 ảnh đã được xác nhận đúng ở tham số mặc định (một cận dưới hợp lệ cho Accuracy còn giữ được: ảnh nào không đổi lựa chọn chắc chắn vẫn đúng). Với $y_h$ và $\gamma$ — có nhãn hình dạng đường độc lập (Bảng 3.1) — chỉ số đo là Accuracy nhóm thẳng/cong nhẹ/cong gắt tính lại trực tiếp trên cả N=200.
 
-**Bảng 3.1b.** Kết quả phân tích độ nhạy $\pm10\%$ trên N=200 ảnh CULane.
+**Bảng 3.3b.** Kết quả phân tích độ nhạy $\pm10\%$ trên N=200 ảnh CULane.
 
 | Tham số | Biến thiên | Kết quả |
 |---|---|---|
@@ -508,7 +521,7 @@ Thứ năm là **hình dạng đường phía trước** — thẳng, cong nhẹ
 
 Cuối cùng là **biển báo giao thông phát hiện được** trong ảnh, gồm loại biển, vị trí tương đối và khoảng cách — căn cứ để khuyến nghị tuân thủ đúng quy tắc hoặc giới hạn tốc độ đang áp dụng. Thiếu phần thông tin này, khuyến nghị chỉ có thể dựa trên hình học làn đường, bỏ sót hoàn toàn khía cạnh quy tắc giao thông — đây cũng là lý do phần thông tin này bắt buộc phải có mặt trong SSI: rubric đánh giá chất lượng khuyến nghị (mục 3.7) có hẳn một tiêu chí riêng về biển báo và quy tắc, áp dụng cho mọi chế độ input kể cả chế độ chỉ-ngữ-nghĩa.
 
-**Bảng 3.2.** Tổng hợp toàn bộ trường trong SSI: nguồn tạo ra, cách biểu diễn, mục đích sử dụng, và căn cứ/độ tin cậy đã kiểm chứng (mục sử dụng tương ứng).
+**Bảng 3.4.** Tổng hợp toàn bộ trường trong SSI: nguồn tạo ra, cách biểu diễn, mục đích sử dụng, và căn cứ/độ tin cậy đã kiểm chứng (mục sử dụng tương ứng).
 
 | Trường | Nguồn | Biểu diễn | Mục đích | Độ tin cậy/Đánh giá |
 |---|---|---|---|---|
@@ -517,7 +530,7 @@ Cuối cùng là **biển báo giao thông phát hiện được** trong ảnh, 
 | `vehicle_offset` (direction, magnitude, offset_percent) | Mô-đun phân tích ngữ nghĩa, suy từ `ego_lane` | Hướng lệch + % bề rộng làn | Căn cứ khuyến nghị giữ làn/điều chỉnh vị trí | Không có ground truth riêng; kế thừa độ chính xác của `ego_lane` |
 | `neighbor_lanes` (left_count, right_count) | Mô-đun phân tích ngữ nghĩa, suy từ `lane_count`/`ego_lane` | Số nguyên mỗi bên | Biết khả năng và hướng đổi làn | Không đo riêng; kế thừa độ chính xác của `lane_count` |
 | `road_shape` (type, severity, direction) | Mô-đun phân tích ngữ nghĩa — $\delta$, $\eta$ (mục 3.3) | Nhãn phân loại 5 lớp | Căn cứ khuyến nghị tốc độ/giữ vô lăng | Accuracy 76,5% khớp chính xác / 78,5% khớp nhóm (mục 4.1) |
-| `traffic_signs` (detected[], count) | YOLOv8n fine-tuned trên TT100K (mục 3.1) | Danh sách {sign_type, confidence, bbox, relative_position, distance} | Căn cứ khuyến nghị tuân thủ quy tắc/tốc độ | Precision/Recall 60,9% trên real-life (mục 4.2); không đo được trên CULane do dữ liệu thưa biển báo (mục 4.3) |
+| `traffic_signs` (detected[], count) | YOLOv8n fine-tuned trên TT100K (mục 3.1) | Danh sách {sign_type, confidence, bbox, relative_position, distance} | Căn cứ khuyến nghị tuân thủ quy tắc/tốc độ | Precision/Recall theo số lượng 60,9% trên real-life; Accuracy phân loại đúng loại 65,4% (real-life, N=52) / 84,6% (CULane, N=13 — nhỏ) (mục 4.2, 4.3) |
 
 Một số kết quả trung gian từ mô-đun phân tích ngữ nghĩa — số liệu định danh riêng cho việc truy vết/tổng hợp kết quả hàng loạt, một ước lượng môi trường đường bằng quy tắc đơn giản, và một số đặc trưng hình học phụ trợ — cố tình không được đưa vào SSI: hoặc không phục vụ trực tiếp việc ra quyết định lái xe, hoặc có độ tin cậy thấp hơn hẳn phần còn lại nên bị loại để tránh khiến VLM coi đó là dữ kiện chắc chắn ngang hàng với các thông tin cốt lõi. Mục tiêu thiết kế là để SSI là một bản dữ liệu tối giản nhất có thể mà vẫn đủ để suy luận, giảm nguy cơ VLM bị phân tán bởi thông tin ít giá trị quyết định.
 
@@ -593,9 +606,9 @@ Ba ứng viên này được xác định trong quá trình phát triển ban đ
 
 Nói cách khác, chuỗi xử lý thực tế là: ảnh → detection/semantic analysis → chạy ba mô hình LLM ở chế độ kết hợp, Gemini chấm điểm, chọn mô hình thắng → cố định mô hình thắng, chạy lại ở cả ba chế độ input, cả ba judge chấm điểm, kết luận cho câu hỏi nghiên cứu cốt lõi. Bước chấm điểm để chọn mô hình và bước chấm điểm để so sánh chế độ input là hai lượt riêng biệt, phục vụ hai câu hỏi nghiên cứu khác nhau, không phải cùng một lượt chấm dùng cho cả hai mục đích.
 
-**Giao thức thực nghiệm (cấu hình gọi API).** Cả ba mô hình ứng viên đều được gọi qua cùng một client, cùng một bộ tham số sinh (generation parameters) mặc định — không mô hình nào được ưu ái bằng cấu hình riêng — liệt kê ở Bảng 3.4.
+**Giao thức thực nghiệm (cấu hình gọi API).** Cả ba mô hình ứng viên đều được gọi qua cùng một client, cùng một bộ tham số sinh (generation parameters) mặc định — không mô hình nào được ưu ái bằng cấu hình riêng — liệt kê ở Bảng 3.5.
 
-**Bảng 3.4.** Cấu hình gọi API dùng chung cho cả ba mô hình ứng viên và cả ba chế độ input.
+**Bảng 3.5.** Cấu hình gọi API dùng chung cho cả ba mô hình ứng viên và cả ba chế độ input.
 
 | Tham số | Giá trị | Lý do |
 |---|---|---|
@@ -623,9 +636,9 @@ Ba chế độ input (chỉ-ảnh/chỉ-ngữ-nghĩa/kết hợp) dùng chung ng
 
 Cách chia này buộc rubric phải tách bạch đúng-sai ở tầng sự kiện (ba tiêu chí đầu) khỏi chất lượng trình bày/hành động ở tầng đầu ra (ba tiêu chí sau) — hai khía cạnh có thể lệch nhau (ví dụ một khuyến nghị nghe hợp lý nhưng dựa trên nhận diện sai vị trí làn vẫn phải bị trừ điểm ở tiêu chí Vị trí làn ego, dù tiêu chí Khuyến nghị lái xe có thể vẫn cao) — thay vì chỉ đo cảm nhận tổng quát "câu trả lời có nghe hợp lý không", vốn dễ bị judge chấm theo văn phong hơn là tính đúng đắn (mục 2.1.4, 4.8).
 
-Mỗi mức điểm trong thang 1–5 được neo bằng một mô tả cố định, áp dụng thống nhất cho cả sáu tiêu chí (Bảng 3.5) — đây là căn cứ để judge (và người đọc luận văn) phân biệt "điểm 3" khác "điểm 4" ở đâu, thay vì một con số không có ngữ nghĩa tường minh.
+Mỗi mức điểm trong thang 1–5 được neo bằng một mô tả cố định, áp dụng thống nhất cho cả sáu tiêu chí (Bảng 3.6) — đây là căn cứ để judge (và người đọc luận văn) phân biệt "điểm 3" khác "điểm 4" ở đâu, thay vì một con số không có ngữ nghĩa tường minh.
 
-**Bảng 3.5.** Mô tả từng mức điểm trong thang đánh giá 1–5, áp dụng cho cả sáu tiêu chí.
+**Bảng 3.6.** Mô tả từng mức điểm trong thang đánh giá 1–5, áp dụng cho cả sáu tiêu chí.
 
 | Điểm | Mô tả |
 |---|---|
@@ -680,7 +693,7 @@ với `{json}` được thay bằng toàn bộ SSI của ảnh này (bước 3 p
 
 **6. Output judge (nguyên văn, Gemini, chấm output ở bước 5 theo rubric 6 tiêu chí, mục 3.7)**:
 
-**Bảng 3.6.** Điểm và lý do (nguyên văn, rút gọn) của judge Gemini cho output VLM ở ảnh 129, chế độ chỉ-ngữ-nghĩa.
+**Bảng 3.7.** Điểm và lý do (nguyên văn, rút gọn) của judge Gemini cho output VLM ở ảnh 129, chế độ chỉ-ngữ-nghĩa.
 
 | Tiêu chí | Điểm | Lý do (nguyên văn, rút gọn) |
 |---|---|---|
@@ -723,7 +736,7 @@ Toàn bộ 200 ảnh, kể cả 26 ảnh thuộc các tình huống khó xác đ
 | Ego lane – Accuracy | **86,0%** |
 | Làn bị phát hiện nhầm | **0,8%** |
 
-Các chỉ số ở Bảng 4.1 được tính trực tiếp từ đối chiếu `image_labels.xlsx` với output của pipeline trên N=200 ảnh:
+Hai chỉ số tính Precision ở Bảng 4.1 dựa trên hai phạm trù lỗi thuộc về kết quả đánh giá (evaluation), không phải thuộc tính của ground truth: **Wrong lane** — số làn bị pipeline phát hiện nhầm, không tồn tại trong thực tế; và **Opposite lane** — số làn ngược chiều bị pipeline gộp nhầm vào làn cùng chiều. Các chỉ số ở Bảng 4.1 được tính trực tiếp từ đối chiếu `image_labels.xlsx` với output của pipeline trên N=200 ảnh:
 
 - Lane count Accuracy = tỉ lệ ảnh có số làn dự đoán khớp đúng số làn thực tế = 138/200 = 69,0%.
 - Lane count MAE = trung bình trị tuyệt đối của hiệu số làn thực tế và dự đoán = 95/200 = 0,475.
@@ -757,16 +770,19 @@ Precision vẫn đạt 100% ngay cả trên nhóm khó, dù Accuracy chỉ 8,3%.
 | Lane count – Precision | 96,6% | **99,4%** |
 | Road type – Accuracy | 76,5% | 53,0% |
 | Ego lane – Accuracy | 86,0% | **86,5%** |
-| Biển báo – Precision | Không đo được (dữ liệu quá thưa) | **60,9%** |
-| Biển báo – Recall | Không đo được (dữ liệu quá thưa) | **60,9%** |
+| Biển báo – Precision (theo số lượng) | Không đo được (dữ liệu quá thưa) | **60,9%** |
+| Biển báo – Recall (theo số lượng) | Không đo được (dữ liệu quá thưa) | **60,9%** |
+| Biển báo – Accuracy phân loại đúng loại (N lượt phát hiện) | 84,6% (11/13) | 65,4% (34/52) |
 
-Precision số làn và Accuracy làn ego giữ nguyên hoặc cao hơn trên dữ liệu hoàn toàn độc lập, trong khi Lane count Accuracy giảm từ 69,0% xuống 50,5% và Road type Accuracy giảm từ 76,5% xuống 53,0%. Đây là bằng chứng ban đầu, không đồng đều giữa các chỉ số: hai thuật toán cốt lõi (ghép cặp làn ego, công thức đếm làn) cho tín hiệu tổng quát hóa tốt sang dữ liệu ngoài domain, không phụ thuộc vào đặc thù riêng của CULane (đây là một thuật toán quy tắc không có tham số học được — mục 3.1, nên không phải hiện tượng overfit theo đúng nghĩa thống kê/học máy, mà là mức độ phù hợp của các heuristic thiết kế với dữ liệu mới). Ngược lại, tỉ lệ khớp chính xác (exact match) giảm từ 69,0% xuống 50,5% (Bảng 4.3), do mô hình có xu hướng bỏ sót làn cùng chiều (under-detect) trong điều kiện camera và ánh sáng khác CULane, chứ không phải hiện tượng bịa làn giả — Precision vẫn rất cao. Đây cũng là lần đầu tiên Precision/Recall của module biển báo được đo lường, điều không thực hiện được trên CULane do dữ liệu quá thưa biển báo (mục 4.3).
+Precision số làn và Accuracy làn ego giữ nguyên hoặc cao hơn trên dữ liệu hoàn toàn độc lập, trong khi Lane count Accuracy giảm từ 69,0% xuống 50,5% và Road type Accuracy giảm từ 76,5% xuống 53,0%. Đây là bằng chứng ban đầu, không đồng đều giữa các chỉ số: hai thuật toán cốt lõi (ghép cặp làn ego, công thức đếm làn) cho tín hiệu tổng quát hóa tốt sang dữ liệu ngoài domain, không phụ thuộc vào đặc thù riêng của CULane (đây là một thuật toán quy tắc không có tham số học được — mục 3.1, nên không phải hiện tượng overfit theo đúng nghĩa thống kê/học máy, mà là mức độ phù hợp của các heuristic thiết kế với dữ liệu mới). Ngược lại, tỉ lệ khớp chính xác (exact match) giảm từ 69,0% xuống 50,5% (Bảng 4.3), do mô hình có xu hướng bỏ sót làn cùng chiều (under-detect) trong điều kiện camera và ánh sáng khác CULane, chứ không phải hiện tượng bịa làn giả — Precision vẫn rất cao. Precision/Recall theo số lượng của module biển báo chỉ đo được trên real-life do CULane quá thưa biển báo; riêng Accuracy phân loại đúng loại đo được trên cả hai bộ vì chỉ cần đối chiếu trực tiếp từng lượt phát hiện mà pipeline thực sự trả về, không cần ground truth số lượng độc lập (mục 4.3) — kết quả 84,6% ở CULane cần đọc thận trọng vì N chỉ có 13.
 
 ## 4.3. Module biển báo giao thông trên CULane
 
 Sử dụng mô hình YOLOv8n đã tự tinh chỉnh trên TT100K (mục 3.2), một phát hiện quan trọng là dataset CULane có mật độ biển báo và đèn tín hiệu rất thấp: chỉ 6% ảnh CULane (12/200) có detection ở ngưỡng chuẩn 0,5, và 20% ảnh không có detection nào dù đã hạ ngưỡng xuống 0,01. Đây là hạn chế của dữ liệu benchmark — CULane vốn được thiết kế cho bài toán phát hiện làn đường — không phải hạn chế của mô hình, điều này được xác nhận qua kết quả tốt hơn hẳn trên dữ liệu dashcam thực tế tự thu thập (mục 4.2, Precision/Recall 60,9%).
 
-**So sánh với công trình cùng hướng.** SafeRoute và Advancing-AV-Intelligence [11], [12] báo cáo accuracy phân loại biển báo từ 96,6% đến 99,8% (YOLOv8 đạt 98,0%) — cao hơn đáng kể so với Precision/Recall 60,9% của đề tài. Chênh lệch này chủ yếu đến từ khác biệt về độ khó bài toán: các con số 96,6–99,8% là accuracy phân loại trên biển báo đã được khoanh vùng sẵn, trong khi Precision/Recall 60,9% của đề tài đo trên bài toán phát hiện từ đầu — vừa phải định vị vừa phải phân loại trên toàn khung hình, không có gợi ý vị trí trước — một bài toán khó hơn về bản chất.
+Vì không thể đo Precision/Recall theo số lượng trên CULane, tác giả đối chiếu thủ công đúng loại biển báo cho từng lượt phát hiện mà pipeline thực sự trả về, đạt Accuracy phân loại 84,6% (11/13, mục 3.2.1) — con số cần đọc thận trọng do N rất nhỏ, nhưng cho phép so sánh trực tiếp với các công trình cùng hướng ở đoạn dưới.
+
+**So sánh với công trình cùng hướng.** SafeRoute và Advancing-AV-Intelligence [11], [12] báo cáo accuracy phân loại biển báo từ 96,6% đến 99,8% (YOLOv8 đạt 98,0%) trên biển báo đã được khoanh vùng sẵn — cùng loại phép đo với Accuracy phân loại của đề tài (không phải Precision/Recall theo số lượng, vốn đo cả bài toán định vị khó hơn). So sánh đúng loại phép đo, đề tài đạt 65,4% (34/52) trên real-life và 84,6% (11/13, N nhỏ) trên CULane — vẫn thấp hơn đáng kể so với 96,6–99,8% của các công trình đối chứng. Khoảng cách này không còn giải thích được hoàn toàn bằng khác biệt độ khó bài toán (định vị + phân loại so với chỉ phân loại) như trước, mà nhiều khả năng phản ánh hạn chế thực sự của việc fine-tune trên tập con 50 lớp TT100K với dữ liệu huấn luyện không đồng đều giữa các lớp (nhiều lớp có rất ít mẫu, phải gộp thành các lớp chung chung như `pm`, `ph`, `w` — mục 3.2.2) — một hạn chế của module biển báo, bàn thêm ở mục 5.3.
 
 ## 4.4. So sánh mô hình LLM cho bước xử lý suy luận
 
@@ -778,7 +794,7 @@ Mô hình `nemotron-nano-12b-v2-vl` bị loại khỏi vòng so sánh chất lư
 
 **Tuân thủ cấu trúc output.** Trên N=200, đếm số output có độ dài dưới 80 ký tự — tương đương bỏ qua cấu trúc ba phần bắt buộc — cho thấy `nemotron-nano-8b` có 99/200 (49,5%) output bị cắt cụt, trong khi `ising-calibration-31b` có 0/200 (0%) trên đúng tập đối chứng này. Xét trên độ dài toàn bộ output, `nemotron-nano-8b` sinh trung bình 95 ký tự/câu trả lời (SD = 78), trong khi `ising-calibration-31b` sinh trung bình 876 ký tự/câu trả lời (SD = 198) — gấp hơn 9 lần, đủ để trình bày trọn vẹn ba phần Tình huống/Khuyến nghị/Lưu ý an toàn theo đúng yêu cầu prompt (mục 3.5), thay vì một câu trả lời rút gọn không đạt cấu trúc tối thiểu.
 
-**Chất lượng nội dung** (so với `nemotron-nano-8b`, N=200, cùng ảnh, cùng judge Gemini, cùng rubric sáu tiêu chí). Đây là phép so sánh trực tiếp và công bằng nhất trong ba mô hình, vì cả hai đều vượt qua tiêu chí loại trừ về độ tin cậy — `nemotron-nano-8b` hoàn thành 200/200, không bị loại vì lý do thiên lệch mẫu như `nemotron-nano-12b-v2-vl`. Áp dụng đúng phương pháp thống kê đã dùng ở mục 4.5 — tính điểm trung bình sáu tiêu chí theo từng ảnh trước, rồi kiểm định bắt cặp trên 200 cặp điểm-trên-ảnh — kết quả ở Bảng 4.4 cho thấy khoảng cách không chỉ lớn mà còn có ý nghĩa thống kê rất mạnh. (Nhắc lại: mỗi tiêu chí chấm trên thang 1–5 theo mô tả cố định ở Bảng 3.5, mục 3.7 — điểm càng cao càng đúng và có căn cứ.)
+**Chất lượng nội dung** (so với `nemotron-nano-8b`, N=200, cùng ảnh, cùng judge Gemini, cùng rubric sáu tiêu chí). Đây là phép so sánh trực tiếp và công bằng nhất trong ba mô hình, vì cả hai đều vượt qua tiêu chí loại trừ về độ tin cậy — `nemotron-nano-8b` hoàn thành 200/200, không bị loại vì lý do thiên lệch mẫu như `nemotron-nano-12b-v2-vl`. Áp dụng đúng phương pháp thống kê đã dùng ở mục 4.5 — tính điểm trung bình sáu tiêu chí theo từng ảnh trước, rồi kiểm định bắt cặp trên 200 cặp điểm-trên-ảnh — kết quả ở Bảng 4.4 cho thấy khoảng cách không chỉ lớn mà còn có ý nghĩa thống kê rất mạnh. (Nhắc lại: mỗi tiêu chí chấm trên thang 1–5 theo mô tả cố định ở Bảng 3.6, mục 3.7 — điểm càng cao càng đúng và có căn cứ.)
 
 **Bảng 4.4.** So sánh chi tiết chất lượng nội dung giữa `nemotron-nano-8b` và `ising-calibration-31b` (Mean ± SD, N=200, kiểm định Wilcoxon signed-rank bắt cặp theo ảnh).
 
@@ -909,7 +925,7 @@ Các phát hiện trên **phù hợp với** giả thuyết khung đỡ, chứ c
 
 200 ảnh đánh giá ở mục 4.1 được lấy ngẫu nhiên từ CULane, cùng nguồn dữ liệu mà mô hình phát hiện làn đường (`culane_res34.pth`) được pretrain, mà không đối chiếu với danh sách phân chia train/val/test chính thức, do bản dữ liệu cục bộ sử dụng không có sẵn thông tin này. Do đó, không loại trừ khả năng một phần ảnh đánh giá trùng với dữ liệu mà mô hình đã học qua, có thể khiến Accuracy và Precision tuyệt đối ở mục 4.1 lạc quan hơn khả năng tổng quát hóa thực tế. Hạn chế này không ảnh hưởng tới các so sánh tương đối — mức cải thiện trước/sau sửa lỗi, toàn bộ kết quả mục 4.4–4.6 — vì các so sánh này dùng chung một lần detect, chỉ khác ở bước xử lý hoặc mô hình phía sau. Kết quả ở mục 4.2, kiểm chứng trên dữ liệu real-life, được thực hiện chính là để giảm thiểu rủi ro này.
 
-Một rủi ro cùng bản chất, tuy quy mô nhỏ hơn, tồn tại ở bước hiệu chỉnh ngưỡng phân loại độ cong (mục 3.3, Bảng 3.1): các ngưỡng $\overline{\text{drift}}_{straight}$/$\overline{\text{drift}}_{sharp}$ được hiệu chỉnh bằng cách đối chiếu avg_drift do thuật toán tính ra với hình dạng đường xác nhận bằng nhãn tay trên một tập ảnh CULane riêng (199 ảnh, kết hợp thêm 200 ảnh Tusimple, chạy qua một script hiệu chỉnh riêng biệt với quy trình đánh giá chính thức). Đề tài không có bản ghi lưu vết đủ chi tiết để xác nhận tập 199 ảnh CULane dùng hiệu chỉnh này có trùng, có giao, hay hoàn toàn tách biệt với 200 ảnh CULane dùng đánh giá ở mục 4.1 — nên không loại trừ được khả năng ngưỡng phân loại độ cong đã được hiệu chỉnh một phần trên chính dữ liệu dùng để báo cáo Accuracy của road type ở Bảng 4.1. Rủi ro này, nếu có, chỉ ảnh hưởng tới chỉ số phân loại hình dạng đường (road type), không ảnh hưởng tới số làn, làn ego, hay độ lệch tâm xe — vốn không phụ thuộc vào các ngưỡng này.
+Một rủi ro cùng bản chất, tuy quy mô nhỏ hơn, tồn tại ở bước hiệu chỉnh ngưỡng phân loại độ cong (mục 3.3, Bảng 3.3): các ngưỡng $\overline{\text{drift}}_{straight}$/$\overline{\text{drift}}_{sharp}$ được hiệu chỉnh bằng cách đối chiếu avg_drift do thuật toán tính ra với hình dạng đường xác nhận bằng nhãn tay trên một tập ảnh CULane riêng (199 ảnh, kết hợp thêm 200 ảnh Tusimple, chạy qua một script hiệu chỉnh riêng biệt với quy trình đánh giá chính thức). Đề tài không có bản ghi lưu vết đủ chi tiết để xác nhận tập 199 ảnh CULane dùng hiệu chỉnh này có trùng, có giao, hay hoàn toàn tách biệt với 200 ảnh CULane dùng đánh giá ở mục 4.1 — nên không loại trừ được khả năng ngưỡng phân loại độ cong đã được hiệu chỉnh một phần trên chính dữ liệu dùng để báo cáo Accuracy của road type ở Bảng 4.1. Rủi ro này, nếu có, chỉ ảnh hưởng tới chỉ số phân loại hình dạng đường (road type), không ảnh hưởng tới số làn, làn ego, hay độ lệch tâm xe — vốn không phụ thuộc vào các ngưỡng này.
 
 **Tóm tắt chương.** Chương này đã trình bày kết quả thực nghiệm cho câu hỏi nghiên cứu cốt lõi: độ chính xác của module hiểu làn đường và biển báo, lựa chọn mô hình suy luận, đóng góp của SSI cùng kiểm chứng độ tin cậy của phương pháp đánh giá, một thực nghiệm bổ sung và giả thuyết về cơ chế đóng góp của thông tin đó, và các hạn chế về dữ liệu/hiệu chỉnh tham số cần lưu ý khi diễn giải kết quả. Chương 5 tiếp theo tổng kết các đóng góp, trả lời trực tiếp từng câu hỏi nghiên cứu, thảo luận hạn chế và đề xuất hướng phát triển tiếp theo.
 
@@ -949,7 +965,7 @@ Ba kết quả thực nghiệm sau đây là các kết quả nền tảng, cầ
 Đề tài xây dựng và kiểm chứng định lượng một pipeline hoàn chỉnh cho bài toán hiểu ngữ nghĩa làn đường và biển báo giao thông hỗ trợ ra quyết định lái xe bằng LLM, trên hai bộ dữ liệu chuẩn phổ biến (CULane, TT100K). Bước xử lý suy luận theo hướng tiếp cận training-free — khác với các hệ VLM lái xe end-to-end (DriveGPT4 [2], DriveLM [3], LMDrive [4]) vốn đòi hỏi huấn luyện quy mô lớn (mục 2.2.3, 2.3) — trong khi bước xử lý nhận diện biển báo có một bước tinh chỉnh YOLOv8n quy mô nhẹ trên TT100K (mục 3.2). Các kết quả chính, có số liệu định lượng cụ thể, gồm:
 
 1. **Module hiểu làn đường** đạt Accuracy 77,3% trên ảnh có vạch kẻ rõ (N=176/200), với bằng chứng ban đầu về khả năng tổng quát hóa trên dữ liệu độc lập tự thu thập — Precision 99,4% và Ego lane Accuracy 86,5% giữ vững hoặc cao hơn, trong khi Lane count/Road type Accuracy giảm đáng kể (mục 4.2) — và giảm mạnh còn 8,3% trên 24 ảnh không có vạch kẻ rõ — một giới hạn cố hữu của detector dựa trên vạch kẻ (mục 4.1).
-2. **Module biển báo** đạt hiệu quả thực sự khi dữ liệu đủ dày (Precision/Recall 60,9% trên dữ liệu real-life), nhưng bị giới hạn trên CULane do đặc thù dataset thưa biển báo (6% ảnh có detection).
+2. **Module biển báo** hoạt động ở mức trung bình khi dữ liệu đủ dày (Precision/Recall theo số lượng 60,9%, Accuracy phân loại đúng loại 65,4% trên dữ liệu real-life, N=52) — thấp hơn đáng kể so với các công trình cùng hướng (96,6–99,8%) ngay cả khi so sánh cùng loại phép đo, nhiều khả năng do dữ liệu huấn luyện không đồng đều giữa 50 lớp TT100K (mục 4.3, 5.3) — và bị giới hạn thêm trên CULane do đặc thù dataset thưa biển báo (6% ảnh có detection).
 3. **SSI cải thiện chất lượng khuyến nghị lái xe** — kết quả chính của đề tài: Gemini 3,32 → 4,53/5 (tăng 1,21 điểm trên thang 5, tương đương +36%), có kiểm chứng nhất quán bởi ba judge độc lập trên N=200 (mục 4.5), với mức độ tin cậy cao cho kết luận chỉ-ảnh thấp nhất (mục 4.5, 5.1).
 4. **Làm rõ cơ chế đóng góp của SSI**: một kiểm chứng bổ sung cho thấy VLM tự nhận diện làn đường từ ảnh thô không hề yếu, thậm chí vượt pipeline UFLD-v2 khi thiếu vạch kẻ hoặc trên dữ liệu ngoài domain (mục 4.7) — phát hiện này phù hợp với giả thuyết rằng SSI đóng vai trò khung đỡ cho suy luận và trình bày trong một tác vụ ghép nhiều bước, hơn là chỉ đơn thuần bù đắp năng lực cảm nhận thị giác còn thiếu (mục 4.8) — đây là suy luận dựa trên bằng chứng gián tiếp, chưa qua thực nghiệm đối chứng trực tiếp.
 5. **Bằng chứng bước đầu về độ tin cậy của phương pháp đánh giá LLM-as-a-judge**: đối chiếu với con người trên một mẫu N=20 đạt 79,2% đồng thuận trong sai số ≤1, và đối chiếu chéo ba judge cùng phương pháp cho thấy Gemini vượt GPT-5 Mini và DeepSeek ở cả ba chỉ số đồng thuận với con người (Bảng 4.8, mục 4.6) — căn cứ chính cho việc chọn Gemini làm judge chính, thay vì đối sánh trực tiếp với các nghiên cứu LLM-as-a-judge khác vốn dùng tác vụ và thang đo khác biệt về bản chất [5].
@@ -961,7 +977,7 @@ Ba kết quả thực nghiệm sau đây là các kết quả nền tảng, cầ
 - **Module hiểu làn đường ở bước xử lý thị giác máy tính phụ thuộc mạnh vào vạch kẻ đường và vào việc cùng domain với dữ liệu huấn luyện.** Trên 24/200 ảnh CULane thuộc các tình huống không có vạch kẻ rõ, Accuracy số làn giảm từ 77,3% xuống còn 8,3%, dù Precision vẫn đạt 100% (mục 4.1). Kiểm chứng bổ sung ở mục 4.7 cho thấy đây là hạn chế của riêng pipeline thị giác máy tính, không phải của cách tiếp cận nói chung: VLM tự nhận diện trực tiếp từ ảnh không chia sẻ đúng điểm yếu này, thậm chí vượt trội pipeline ở chính hai điều kiện đó — mở ra hướng thiết kế hybrid (mục 5.4).
 - Rủi ro trùng lặp dữ liệu (data leakage) trên dữ liệu CULane, và rủi ro tương tự chưa loại trừ được ở bước hiệu chỉnh ngưỡng phân loại độ cong (mục 4.9), giảm thiểu một phần bằng kiểm chứng độc lập trên dữ liệu real-life.
 - So sánh mô hình LLM và judge giới hạn trong các lựa chọn miễn phí, chi phí thấp, chưa mở rộng sang các phiên bản thương mại lớn hơn hoặc mới hơn của các họ mô hình đã thử (Gemini, GPT, DeepSeek) hay các mô hình khác như Claude.
-- Module biển báo trên CULane bị giới hạn bởi mật độ dữ liệu thưa của bản thân dataset.
+- Module biển báo trên CULane bị giới hạn bởi mật độ dữ liệu thưa của bản thân dataset. Ngoài ra, Accuracy phân loại đúng loại biển báo (65,4% trên real-life, N=52 — mục 4.2, 4.3) thấp hơn đáng kể so với các công trình cùng hướng (96,6–99,8%) ngay cả khi so sánh cùng loại phép đo (phân loại trên biển đã khoanh vùng sẵn) — nhiều khả năng do dữ liệu huấn luyện không đồng đều giữa 50 lớp TT100K đã fine-tune, phải gộp một số lớp hiếm gặp thành các lớp chung chung (`pm`, `ph`, `w`).
 - Độ trễ và chi phí suy luận thời gian thực của toàn bộ pipeline (bao gồm gọi API cho VLM/LLM-as-a-judge) chưa được đo hệ thống hay tối ưu trong phạm vi đề tài — mục 3.6 chỉ báo cáo độ trễ quan sát được trong quá trình phát triển của riêng mô hình 31B, không phải một phép đo hệ thống có kiểm định; đây là điều kiện cần kiểm chứng thêm trước khi triển khai cho một ứng dụng đòi hỏi phản hồi thời gian thực.
 
 ## 5.4. Hướng phát triển tiếp theo
