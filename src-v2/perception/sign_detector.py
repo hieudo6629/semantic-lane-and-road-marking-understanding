@@ -66,12 +66,15 @@ class DetectedSign:
     display_name: str = ""               # Tên tiếng Anh dễ đọc tra từ traffic_sign_mapping.json, fallback = raw_class_name nếu không khớp được mã
 
     def to_dict(self) -> Dict:
+        # "distance" (near/medium/far) cố tình không đưa vào đây: trường này
+        # không được prompt khai thác tường minh và không có ground truth để
+        # kiểm chứng độc lập (luận văn, mục 3.3.2), nên bị loại khỏi SSI dù
+        # vẫn được tính và giữ trên object cho reasoning/recommendation.py.
         return {
             "sign_type": self.sign_type,
             "confidence": float(self.confidence),
             "bbox": list(self.bbox),
             "relative_position": self.relative_position,
-            "distance": self.distance,
             "raw_class_name": self.raw_class_name,
             "display_name": self.display_name,
         }
