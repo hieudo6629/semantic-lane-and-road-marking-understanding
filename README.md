@@ -94,9 +94,12 @@ python batch_process.py --input input_real_life  --output output_real_life   # s
 |---|---|---|
 | 4.2.1 | Lane semantics on CULane: lane count Acc/MAE/Precision, ego lane, road shape (Normal/Hard) | `output-v3/*_brief.json` compared with `image_labels.xlsx` (also used by `evaluate_llm_lane_perception.py`, `evaluate_road_condition.py`) |
 | 4.2.1 | Lane semantics on the self-collected set | `python evaluate_real_life.py` |
-| 4.2.2 | Traffic signs on CULane and the self-collected set: Precision/Recall/F1/Classification Acc | Visual review of `sign_crops_culane/`, `sign_crops/`, `culane_recall_check/`, `sign_type_labeling_worksheet*.xlsx`. On the self-collected set: `evaluate_real_life.py` |
+| 4.2.2 | YOLOv8n training results on the TT100K validation set (Precision/Recall/mAP50/mAP50-95) | Computed automatically by Ultralytics during fine-tuning on Kaggle (the fine-tuning script is not in this repo) |
+| 4.2.2 | Traffic signs on CULane and the self-collected set, at confidence 0.5: Precision/Recall/F1/Classification Acc | Visual review of `sign_crops_culane/`, `sign_crops/`, `culane_recall_check/`, `sign_type_labeling_worksheet*.xlsx`. On the self-collected set: `evaluate_real_life.py` |
 | 4.2.3 | SSI field quality | Same ground truth as 4.2.1 and 4.2.2 |
-| 4.2.4 | CPU latency (lane / sign / semantic step, batch 1) | `python benchmark_cpu_latency.py`<br>`python benchmark_yolov8n_predict.py`<br>`python benchmark_yolo_variants_real_life.py` → `evaluation_results/cpu_latency/` |
+| 4.2.4 | CPU latency (lane / sign / semantic step, batch 1) on 200 CULane and 200 self-collected images | `python benchmark_cpu_latency.py`<br>`python benchmark_yolov8n_predict.py`<br>`python benchmark_yolo_variants_real_life.py` → `evaluation_results/cpu_latency/` |
+
+The ego-lane reference row is set to ρ = 0.919 (`vehicle_position_y_ratio` in `analysis/lane_analyzer.py`). This value is the share of the CULane image that is still visible above the hood.
 
 ### Step 3: Generate recommendations with the VLM (§3.5)
 
@@ -114,11 +117,24 @@ python llm_batch_client.py --mode image_json --image-dir input  --json-dir outpu
 
 | Section | Content | Script → result |
 |---|---|---|
-| 4.3.1 | Screening of 3 candidate VLMs (Combined mode, Gemini judge) | `evaluate_model_comparison.py` (diagnostic set)<br>`evaluate_model_comparison_full.py` → `evaluation_results/model_comparison_full/` |
-| 4.3.2 | 3 input modes × 3 judges, Wilcoxon + Bonferroni, Cohen's d_z | Gemini: `evaluate_mode_comparison_v5.py` → `session_3_ising31b/`<br>GPT-5 Mini: `evaluate_mode_comparison_v5_gpt.py` → `mode_comparison_gpt/`<br>DeepSeek: `evaluate_mode_comparison_v5_deepseek.py` → `mode_comparison_deepseek/` |
-| 4.3.3 | Effect of SSI accuracy on recommendation quality | `python analyze_ssi_error_impact.py` → `evaluation_results/ssi_error_impact/` (reads existing results, no API calls) |
+| 4.3.1 | Screening of 3 candidate VLMs (`ising-calibration-31b`, `nemotron-nano-vl-8b`, `nemotron-nano-12b-v2-vl`) on 200 CULane images, Combined mode, Gemini judge | Generate the outputs with `llm_batch_client.py --mode image_json --model <model>`. Then run `python evaluate_model_comparison_full.py` → `evaluation_results/model_comparison_full/`. `nemotron-nano-12b-v2-vl` returned only 34/200 responses (166 HTTP 500 errors), so it is left out of the quality comparison. |
+| 4.3.2 | 3 input modes (`ising-calibration-31b`, 200 CULane images) × 3 judges | Gemini: `evaluate_mode_comparison_v5.py` → `session_3_ising31b/`<br>GPT-5 Mini: `evaluate_mode_comparison_v5_gpt.py` → `mode_comparison_gpt/`<br>DeepSeek: `evaluate_mode_comparison_v5_deepseek.py` → `mode_comparison_deepseek/` |
+| 4.3.3 | Effect of SSI accuracy: images are split by whether the SSI ego lane is correct (172 correct / 28 incorrect). Wilcoxon tests Δ within each group; Mann–Whitney U compares the two groups. | `python analyze_ssi_error_impact.py` → `evaluation_results/ssi_error_impact/` (reads existing results, no API calls) |
 
-The judges share one rubric, defined in `score_output_by_gemini.py` and imported by the GPT and DeepSeek scripts. In one call, the judge scores the outputs of all three modes for the same image. Before running DeepSeek, check that the model accepts images with `python score_output_by_deepseek.py --test-only`.
+**Statistical tests for §4.3.2.** These scripts only produce the per-image scores. The tests are run on those scores:
+- For each image, the aggregate score is the mean of the 6 criteria, and Δ = Combined − Image-only.
+- The pairs (c1,c2), (c1,c3) and (c2,c3) are tested per judge with the two-sided Wilcoxon signed-rank test. The Bonferroni threshold is 0.05/9 = 0.0056.
+- The effect size is Cohen's d_z = mean(d) / sd(d).
+
+**Judges.** All three judges use the same rubric. It is defined in `score_output_by_gemini.py` and imported by the GPT and DeepSeek scripts.
+
+| Judge | Model | Settings |
+|---|---|---|
+| Gemini | `gemini-3.5-flash` | temperature 0.1, up to 8192 tokens |
+| GPT-5 Mini | `gpt-5-mini` | up to 4096 tokens, API default temperature |
+| DeepSeek | `deepseek-v4-flash-vision-exp` | temperature 0.1, up to 8192 tokens |
+
+Each judge retries up to 5 times. In one call, it scores the outputs of all three modes for the same image, so scores are compared only within the same scoring session. Before running DeepSeek, check that the model accepts images with `python score_output_by_deepseek.py --test-only`.
 
 ### Step 5: Compare LLM-as-a-Judge with human ratings (§4.4)
 
@@ -141,13 +157,22 @@ python evaluate_llm_lane_perception.py --labels new_image_labels.xlsx \
     --pipeline-dir output_real_life --llm-dir output-llm-lane-perception-real-life
 ```
 
-**4.5.2: Effect of the prompt.** Three prompt variants are compared: `current`, `p1_minimal` ([prompt_p1_minimal.txt](src-v2/prompt_p1_minimal.txt)) and `p2_minimal_structured` ([prompt_p2_minimal_structured.txt](src-v2/prompt_p2_minimal_structured.txt)).
+**4.5.2: Effect of the prompt.** Three prompt versions are compared. The model (`ising-calibration-31b`), the Combined mode and the 200 CULane images stay the same. The thesis names map to the code as follows:
+
+| Thesis | Code | Content |
+|---|---|---|
+| Prompt v1 | `p1_minimal` ([prompt_p1_minimal.txt](src-v2/prompt_p1_minimal.txt)) | Asks only for a recommendation from the image and the SSI |
+| Prompt v2 | `p2_minimal_structured` ([prompt_p2_minimal_structured.txt](src-v2/prompt_p2_minimal_structured.txt)) | v1 plus the 3-part output structure |
+| Prompt v3 | `current` (`DEFAULT_PROMPTS` in `llm_batch_client.py`) | v2 plus rules on evidence, inference, and conflicts between the image and the SSI |
+
+Gemini scores all three versions together in one call per image, in a separate scoring session (`evaluation_results/session_prompt_ablation/`).
 
 ```bash
-python evaluate_prompt_ablation.py        # generate + score (joint scoring)
-python score_independent.py               # score each variant independently
-python analyze_prompt_ablation_stats.py   # Wilcoxon, paired t-test, Cohen's d
+python evaluate_prompt_ablation.py        # generate + score the three versions in one call
+python analyze_prompt_ablation_stats.py   # Wilcoxon signed-rank for each pair of versions
 ```
+
+The script also prints a paired t-test and Cohen's d as a cross-check. The thesis reports Wilcoxon with a Bonferroni threshold of 0.05/3 = 0.0167, which you compare against the p-values yourself.
 
 ---
 
