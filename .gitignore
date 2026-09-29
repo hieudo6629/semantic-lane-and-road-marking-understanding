@@ -10,7 +10,6 @@ src-v2/tests/
 src-v2/test_*.py
 src-v2/translate.py
 src-v2/video_sign_detect.py
-src-v2/get_image_from_video.py
 lane_ratio.py
 download_dataset.py
 scripts_md_to_docx.py
