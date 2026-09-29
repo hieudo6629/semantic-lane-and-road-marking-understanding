@@ -1,5 +1,0 @@
-Situation: The ego vehicle is in the middle of a straight urban multi-lane road with two lanes visible. The vehicle is slightly offset to the left of its lane center.
-
-Recommendation: Maintain current lane position.
-
-Safety note: No specific safety concern identified; however, caution is advised due to the proximity of the vehicle to its left boundary.

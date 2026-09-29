@@ -1,5 +1,0 @@
-Situation: The ego vehicle is in the right lane of a two-lane road with a green traffic light ahead. There are multiple vehicles in front, including a yellow taxi directly ahead.
-
-Recommendation: Continue straight through the intersection.
-
-Safety note: Be cautious of potential pedestrians or cyclists crossing the road, as they may not be visible in the image.

@@ -1,5 +1,0 @@
-Situation: The ego vehicle is in a congested urban street with multiple lanes and tall buildings on both sides. The traffic is dense with various vehicles in front of the ego vehicle.
-
-Recommendation: Maintain the current lane position and follow the vehicle in front of you at a safe distance to avoid any sudden movements or accidents.
-
-Safety note: Be cautious of sudden stops or changes in traffic flow due to the dense traffic conditions.

@@ -1,5 +1,0 @@
-Situation: The road is a two-lane street with a solid yellow line dividing the lanes. The ego vehicle is in the right lane with no visible vehicles in front of it. There are buildings and greenery on both sides of the road.
-
-Recommendation: Continue driving straight ahead in the right lane.
-
-Safety note: There are no visible traffic signs or signals in the image, so it is important to proceed with caution and be aware of any potential hazards that may not be visible in the image.
