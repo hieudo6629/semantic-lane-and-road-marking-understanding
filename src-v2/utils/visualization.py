@@ -101,7 +101,7 @@ class SceneVisualizer:
             self._draw_signs(vis, detected_signs)
 
         if show_annotations:
-            self._draw_annotations(vis, lane_result)
+            self._draw_annotations(vis, lane_result, lane_count=len(lanes) - 1 if lanes else 0)
 
         return vis
 
@@ -176,15 +176,20 @@ class SceneVisualizer:
             label = f"{sign.sign_type} {sign.confidence:.0%}"
             cv2.putText(vis, label, (x1, max(y1 - 10, 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-    def _draw_annotations(self, vis: np.ndarray, lane_result: LaneAnalysisResult) -> None:
+    def _draw_annotations(self, vis: np.ndarray, lane_result: LaneAnalysisResult, lane_count: int = 0) -> None:
         """Vẽ chữ chú thích: ego lane, offset, số làn lân cận - lấy trực tiếp từ dataclass, không tra dict sai key."""
         font = cv2.FONT_HERSHEY_SIMPLEX
         y = 30
         ego = lane_result.ego_lane
         offset_summary = _summarize_offset(lane_result.vehicle_offset.to_dict())
+        left_count = len(lane_result.left_neighbor_indices)
+        # Vị trí làn ego dạng "k/n" (k = left_count+1), giống hệt cách tính
+        # trong scene_summarizer.py - KHÔNG dùng left_boundary_index/right_boundary_index
+        # (chỉ số nội bộ gốc của UFLD-v2 trước khi sắp xếp, không phải thứ tự làn).
+        ego_position = f"{left_count + 1}/{lane_count}" if lane_count > 0 else "unknown"
 
         lines = [
-            f"Ego Lanes: {ego.left_boundary_index}-{ego.right_boundary_index} (conf {ego.confidence:.2f})",
+            f"Ego Lane: {ego_position} (conf {ego.confidence:.2f})",
             f"Offset: {offset_summary['direction']}, {offset_summary['magnitude']} ({offset_summary['offset_percent']}%)",
             f"Left neighbors: {len(lane_result.left_neighbor_indices)}, "
             f"Right neighbors: {len(lane_result.right_neighbor_indices)}",

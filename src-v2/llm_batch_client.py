@@ -45,6 +45,7 @@ import base64
 import json
 import os
 import time
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 import cv2
@@ -68,65 +69,73 @@ IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
 # muốn thử nhanh 1 prompt khác mà không sửa file.
 DEFAULT_PROMPTS = {
     "common":"""
-You are a lane-level traffic understanding and driving decision-support assistant.
+You are a traffic scene understanding and decision-support assistant.
 
-Your task is to understand the current lane configuration and use it to provide a safe, objective, concise, and evidence-based driving recommendation.
+Your task is to understand the road and lane configuration, ego-vehicle position, traffic signs, and other decision-relevant information from the provided evidence, then provide a safe, objective, concise, and evidence-based driving recommendation.
 
-Focus primarily on four lane-level semantics:
+1. EVIDENCE
 
-1. Lane count
-   - Number of relevant drivable lanes visible or represented.
+- Use ONLY information supported by the provided evidence.
+- Do not invent or assume vehicles, lanes, lane boundaries, road markings, traffic signs, signals, speed limits, road conditions, hazards, or traffic rules.
+- If important information is missing, unclear, or ambiguous, state the uncertainty instead of guessing.
+- Never infer a speed limit unless it is explicitly provided.
 
-2. Ego lane
-   - Which lane the ego vehicle is currently occupying.
-   - Its position relative to the visible lane boundaries.
+2. TRAFFIC UNDERSTANDING
 
-3. Vehicle offset
-   - Whether the ego vehicle is near the lane center or close to a lane boundary.
-   - When measurable, assess the offset relative to lane width.
+Focus on the information relevant to the driving decision:
 
-4. Neighbor lanes
-   - Number and position of neighboring lanes to the left and right of the ego lane.
-   - Consider their relevance to the ego vehicle's current position and potential lane changes.
+- Road geometry and road structure
+- Lane configuration and lane boundaries
+- Ego lane and ego-vehicle position
+- Vehicle offset within the ego lane
+- Relevant neighboring lanes
+- Traffic signs and signals
+- Explicitly provided traffic rules or speed limits
+- Other information only when it directly affects the driving decision
 
-EVIDENCE RULES:
-- Use ONLY information supported by the available evidence.
-- Do not invent lanes, lane boundaries, vehicles, or road structure.
-- Do not assume that a missing or undetected lane does not exist.
-- Do not assume traffic rules or lane-speed behavior unless supported by the evidence.
-- If important lane information is uncertain or contradictory, state the uncertainty.
+Do not mention information merely because it is available.
 
-DECISION RULES:
-- Base the recommendation primarily on lane configuration, ego position, offset, and neighboring lanes.
-- Maintaining the current lane is preferred when there is no evidence requiring a lane change.
-- Do not recommend changing lanes merely because a neighboring lane exists.
-- Consider lane position and offset when assessing whether the ego vehicle is safely positioned within its lane.
-- A large lateral offset or proximity to a lane boundary should be treated as a potential safety concern when supported by the evidence.
-- Only recommend a lane change when there is a clear evidence-based reason.
-- Do not assume that the left lane is faster or the right lane is slower unless this is supported by the available evidence.
+3. DECISION MAKING
 
-The recommendation should explain how the lane-level situation supports the proposed action.
+- Base the recommendation on the actual traffic situation and available evidence.
+- Use the most decision-relevant road, lane, ego-position, and traffic-sign evidence to support the recommendation.
+- Prefer maintaining the current lane when there is no evidence requiring a change.
+- Do not recommend lane changes, overtaking, acceleration, or braking without a clear evidence-based reason.
+- If uncertainty affects the decision, choose the safer reasonable action and briefly state the uncertainty.
+- Do not give generic driving advice unrelated to the current scene.
 
-Do not describe information that is irrelevant to the driving decision.
-Do not describe your reasoning process.
+4. HALLUCINATION CONTROL
 
+- Never fill missing information with assumptions.
+- Missing or undetected information does not prove that the corresponding object does not exist.
+- Do not create traffic rules, speed limits, hazards, or road events that are not supported by the evidence.
+- Do not silently resolve contradictory evidence by inventing information.
+
+5. OUTPUT
+
+The final response must be concise, practical, and specific.
+Do not describe the reasoning process.
+Do not mention the input format, model, prompt, or perception pipeline.
+Do not repeat the same information across sections.
 """,
     "image_only": """
 Use the provided traffic scene image as the ONLY source of information.
 
-Visually determine, when reliably possible:
+Base the assessment only on visually observable or reasonably identifiable evidence in the image.
 
-- Number of visible drivable lanes
-- Ego lane
-- Lane boundaries
-- Ego vehicle position within the lane
-- Relative lateral offset from the lane center
-- Neighboring lanes to the left and right
+Focus on:
 
-Use visual evidence to determine whether the ego vehicle is centered or close to a lane boundary.
+- Road geometry and road structure
+- Lane configuration and lane boundaries
+- Ego lane and ego-vehicle position
+- Vehicle offset when visually identifiable
+- Relevant neighboring lanes
+- Visible traffic signs and signals
+- Visible road markings relevant to the driving decision
 
-Do not infer lane information that cannot reasonably be determined from the image.
-If lane-level information is uncertain, acknowledge the uncertainty.
+Do not infer details that cannot reasonably be determined from the image.
+
+If important information cannot be reliably determined from the image, acknowledge the uncertainty instead of guessing.
    """,
     "json_only": """
 Use the provided semantic scene JSON as the ONLY source of information.
@@ -155,48 +164,41 @@ Use the semantic information to support the driving recommendation, not merely t
     {json}""",
 
     "image_json": """
+Use BOTH the provided traffic scene image and the semantic scene JSON as complementary sources of evidence.
 
-Use BOTH the traffic scene image and the semantic lane JSON as complementary sources of evidence.
+The image provides direct visual evidence.
+The semantic JSON provides structured perception information.
 
-The main objective is to build the most accurate lane-level understanding by combining both sources.
+Use information from BOTH sources when relevant.
 
-For each of the four lane-level semantics:
+For each important fact:
 
-1. Lane count
-2. Ego lane
-3. Vehicle offset
-4. Neighbor lanes
+- Use the image when it provides clear visual evidence.
+- Use the JSON when it provides structured information that is difficult, ambiguous, or impossible to determine reliably from the image.
+- Use both sources when they provide consistent evidence.
+- Do not ignore information simply because it is available from only one source.
 
-use the following rule:
+In particular, use the JSON to supplement visual understanding of:
+- Lane configuration and lane boundaries
+- Ego lane and ego-vehicle position
+- Vehicle offset
+- Neighboring lanes
+- Traffic signs and signals
+- Structured road geometry
 
-- First use the image to independently understand what is visually observable.
-- Use the JSON to supplement information that is difficult, ambiguous, or not reliably measurable from the image.
-- If the image and JSON agree, combine the information.
-- If the JSON provides precise structured information such as lane indices, lane center, offset, or lane width, use that information to improve the lane-level assessment.
-- If the image clearly contradicts the JSON, do not blindly follow the JSON. Use the stronger evidence and briefly acknowledge important uncertainty.
-- Do not ignore useful information simply because it comes from only one source.
+Use the image to supplement information that is missing, incomplete, or uncertain in the JSON.
 
-OFFSET ANALYSIS:
+If the image and JSON clearly conflict:
+- Do not silently choose one source without considering the conflict.
+- Use the source with stronger direct evidence for that specific fact.
+- If the conflict affects the driving decision, briefly state the uncertainty.
+- Do not invent information to reconcile the conflict.
+- Do not assume that the JSON is always correct.
 
-When offset and lane width are available, assess the vehicle's lateral position relative to the lane center.
+Before making the recommendation, combine the relevant evidence from BOTH sources into one understanding of the traffic situation.
 
-Use the offset ratio when provided.
-
-As a practical interpretation:
-- Near 0%: approximately centered.
-- Moderate offset: noticeably displaced from the center but still within the lane.
-- Offset above approximately 25 percent of lane width: treat as close to a lane boundary and consider it a potential lateral safety concern.
-
-Do not treat the 25% threshold as an absolute traffic rule. Use it as a practical interpretation of lateral position.
-
-NEIGHBOR LANE ANALYSIS:
-
-Determine:
-- Whether the ego vehicle is in a left, middle, or right position among the visible lanes.
-- Number of neighboring lanes on each side.
-- Whether a neighboring lane is relevant to the current driving decision.
-
-The final recommendation should be based primarily on the combined lane count, ego lane, offset, and neighboring-lane information.
+Use the most reliable and decision-relevant information from both sources.
+Do not mention information merely to demonstrate that both sources were used.
     Json data:
     {json}""",
 
@@ -209,7 +211,7 @@ The final recommendation should be based primarily on the combined lane count, e
     # có rủi ro model "quên" ràng buộc output khi JSON càng dài.
     "output_format": """
 
-5. OUTPUT
+6. OUTPUT FORMAT
 
 Respond in exactly 3 parts, in this order, as plain sentences (no headers, no markdown):
 1. Situation: 1-2 sentences on the specific decision-relevant evidence observed.
@@ -321,8 +323,15 @@ def call_llm(
     frequency_penalty: float,
     seed: Optional[int],
     timeout: int,
-) -> str:
-    """Gọi endpoint chat/completions kiểu NVIDIA NIM (OpenAI-compatible), trả về text trả lời."""
+) -> tuple[str, float]:
+    """
+    Gọi endpoint chat/completions kiểu NVIDIA NIM (OpenAI-compatible).
+
+    Trả về (text trả lời, request_seconds) - request_seconds chỉ tính thời gian
+    của đúng lệnh gọi requests.post() (gửi request tới lúc nhận response), KHÔNG
+    tính thời gian đọc file JSON, encode/nén ảnh, hay ghi file output - những
+    việc đó nằm ở process_one().
+    """
     if not api_key:
         raise ValueError(
             "Thiếu NVIDIA API key. Đặt biến môi trường NVIDIA_API_KEY hoặc truyền --api-key."
@@ -346,10 +355,12 @@ def call_llm(
     if seed is not None:
         payload["seed"] = seed
 
+    request_start = time.time()
     response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+    request_seconds = time.time() - request_start
     response.raise_for_status()
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    return data["choices"][0]["message"]["content"], request_seconds
 
 
 def find_stems(mode: str, image_dir: Optional[str], json_dir: Optional[str]) -> List[str]:
@@ -377,14 +388,14 @@ def find_stems(mode: str, image_dir: Optional[str], json_dir: Optional[str]) -> 
 
     if mode == "image_only":
         names = os.listdir(image_dir)
-        return sorted(os.path.splitext(n)[0] for n in names if n.lower().endswith(IMAGE_EXTENSIONS) and not n.startswith("_"))
+        return sorted(os.path.splitext(n)[0] for n in names if n.lower().endswith(IMAGE_EXTENSIONS) and os.path.splitext(n)[0].isdigit())
 
     if mode == "json_only":
         names = os.listdir(json_dir)
         return sorted(os.path.splitext(n)[0] for n in names if _is_scene_json(n))
 
     # image_json: chỉ xử lý các tên xuất hiện ở CẢ 2 thư mục
-    image_stems = {os.path.splitext(n)[0] for n in os.listdir(image_dir) if n.lower().endswith(IMAGE_EXTENSIONS) and not n.startswith("_")}
+    image_stems = {os.path.splitext(n)[0] for n in os.listdir(image_dir) if n.lower().endswith(IMAGE_EXTENSIONS) and os.path.splitext(n)[0].isdigit()}
     json_stems = {os.path.splitext(n)[0] for n in os.listdir(json_dir) if _is_scene_json(n)}
 
     missing_json = sorted(image_stems - json_stems)
@@ -406,7 +417,8 @@ def _resolve_image_path(image_dir: str, stem: str) -> str:
     return os.path.join(image_dir, f"{stem}.jpg")  # fallback, sẽ lỗi rõ ràng khi mở file nếu không tồn tại
 
 
-def process_one(args, stem: str) -> None:
+def process_one(args, stem: str) -> float:
+    """Xử lý 1 stem, trả về request_seconds (thời gian riêng của lệnh gọi API - xem call_llm())."""
     image_path = _resolve_image_path(args.image_dir, stem) if args.mode in ("image_only", "image_json") else None
 
     json_data = None
@@ -425,7 +437,7 @@ def process_one(args, stem: str) -> None:
     if args.system:
         messages = [{"role": "system", "content": args.system}] + messages
 
-    answer = call_llm(
+    answer, request_seconds = call_llm(
         base_url=args.base_url,
         api_key=args.api_key,
         model=args.model,
@@ -442,9 +454,34 @@ def process_one(args, stem: str) -> None:
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(answer)
 
+    return request_seconds
+
+
+TIMING_LOG_FILENAME = "_request_timings.json"
+
+
+def load_timing_log(output_dir: str) -> Dict[str, Dict]:
+    """Đọc file log thời gian request đã có (nếu có) trong output_dir."""
+    path = os.path.join(output_dir, TIMING_LOG_FILENAME)
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_timing_log(output_dir: str, timing_log: Dict[str, Dict]) -> None:
+    path = os.path.join(output_dir, TIMING_LOG_FILENAME)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(timing_log, f, indent=2, ensure_ascii=False, sort_keys=True)
+
 
 def run_batch(args) -> None:
     os.makedirs(args.output_dir, exist_ok=True)
+
+    # File log thời gian request, 1 entry/stem - khi chạy lại đúng stem đó
+    # (--overwrite, hoặc output .txt bị xóa), entry cũ bị GHI ĐÈ bằng lần đo
+    # mới nhất, không cộng dồn/nhân bản.
+    timing_log = load_timing_log(args.output_dir)
 
     stems = find_stems(args.mode, args.image_dir, args.json_dir)
     if args.stems:
@@ -473,10 +510,19 @@ def run_batch(args) -> None:
 
         start = time.time()
         try:
-            process_one(args, stem)
+            request_seconds = process_one(args, stem)
             elapsed = time.time() - start
             succeeded += 1
-            logger.info(f"[{i}/{len(stems)}] OK {stem} ({elapsed:.1f}s)")
+            logger.info(f"[{i}/{len(stems)}] OK {stem} ({elapsed:.1f}s, API {request_seconds:.1f}s)")
+
+            timing_log[stem] = {
+                "request_seconds": round(request_seconds, 3),
+                "total_seconds": round(elapsed, 3),
+                "mode": args.mode,
+                "model": args.model,
+                "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            }
+            save_timing_log(args.output_dir, timing_log)
         except Exception as exc:  # noqa: BLE001 - lỗi 1 mục không được làm dừng cả batch
             logger.error(f"[{i}/{len(stems)}] LỖI {stem}: {exc}")
             failures.append({"stem": stem, "error": str(exc)})

@@ -194,11 +194,11 @@ def run_batch(args) -> None:
     stems = sorted(
         os.path.splitext(n)[0]
         for n in os.listdir(args.input_dir)
-        if n.lower().endswith(IMAGE_EXTENSIONS) and not n.startswith("_")
-        # "_observed" - quy ước đặt tên riêng cho ảnh crop thử nghiệm (đo tỉ lệ
-        # rho, xem mục 3.3 luận văn), KHÔNG phải ảnh thuộc bộ N=200 đánh giá -
-        # loại khỏi batch để không lẫn vào kết quả tự nhận diện của VLM.
-        and "_observed" not in n
+        if n.lower().endswith(IMAGE_EXTENSIONS)
+        # Chỉ nhận ảnh tên <số>.jpg (bộ N=200 đánh giá) - loại các ảnh khác
+        # như "1_observed.jpg" (crop thử nghiệm đo tỉ lệ rho, xem mục 3.3
+        # luận văn) để không lẫn vào kết quả tự nhận diện của VLM.
+        and os.path.splitext(n)[0].isdigit()
     )
     if args.stems:
         wanted = [s.strip() for s in args.stems.split(",") if s.strip()]

@@ -1,15 +1,74 @@
+# ===== Python / IDE / local tools =====
+__pycache__/
+*.pyc
+.claude/
+
+# ===== Old code, tests and utility scripts outside the main flow =====
+src/
+test/
+src-v2/tests/
+src-v2/test_*.py
+src-v2/translate.py
+src-v2/video_sign_detect.py
+src-v2/get_image_from_video.py
+lane_ratio.py
+download_dataset.py
+scripts_md_to_docx.py
+hdsd_test_traffic_analyzer.md
+
+# ===== Input data =====
 src-v2/input
-src-v2/output
-src-v2/output-*
-src-v2/evaluation_results
-src-v2/*.xlsx
-src-v2/*.docx
-src-v2/bao_cao_luan_van.md
-src-v2/claude.md
-Master_thesis_TTMH.pdf
-TTMH_main.tex
-src-v2/output_*
 src-v2/input_*
 src-v2/input-*
-src-v2/sign_crops
-src-v2/sign_crops_culane
+src-v2/diagnostic_set/
+src-v2/extracted_frames/
+src-v2/videos/
+extracted_frames/
+
+# ===== Results =====
+src-v2/output
+src-v2/output-*
+src-v2/output_*
+src-v2/evaluation_results/
+src-v2/culane_*/
+src-v2/culane_*.json
+src-v2/sign_crops/
+src-v2/sign_crops_culane/
+src-v2/*_manifest.json
+
+# ===== Models =====
+model/
+*.pt
+*.onnx
+
+# ===== LaTeX, PDF and build files =====
+*.tex
+*.pdf
+*.bib
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# ===== Excel =====
+*.xlsx
+
+# ===== Thesis drafts, reports and thesis figures =====
+*.docx
+src-v2/luan_van_ban_thao*.md
+src-v2/chuong3_cong_thuc_tom_tat.md
+src-v2/bao_cao_luan_van.md
+bao_cao_*.md
+docs/
+src-v2/figures/
+Figure_1.png
+pipeline_overall.png
+thesis-proposal-diagram-1.png
+src-v2/claude.md
