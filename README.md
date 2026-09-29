@@ -1,184 +1,179 @@
 # Semantic Lane and Traffic Sign Understanding Using Vision-Language Models for Driving Decision Support
 
-This repository contains the code for the thesis. The pipeline takes a dashcam image and produces **Structured Semantic Information (SSI)**, a JSON description of the lanes and traffic signs. A Vision-Language Model (VLM) then uses the SSI to generate driving recommendations. The recommendations are scored with **LLM-as-a-Judge**, and the judge scores are checked against human ratings.
+This repository contains the source code for the master's thesis. The system takes a dashcam image and produces driving recommendations with a Vision-Language Model (VLM). Before the VLM, a detection step and a rule-based semantic representation step turn the image into **Structured Semantic Information (SSI)**. The thesis tests whether adding SSI to the VLM input changes the quality of the recommendations.
 
-All current code is in [`src-v2/`](src-v2/). The old `src/` and `test/` folders are no longer used and are ignored by git.
-
-All commands below are run from inside `src-v2/`.
+The code is in [`src-v2/`](src-v2/). All commands below are run from inside `src-v2/`.
 
 ---
 
-## 1. Pipeline overview (Thesis Ch. 3)
+## 1. Overall architecture (Thesis §3.2)
+
+The pipeline has two modules. The evaluation stage runs separately from them.
 
 ```text
-Dashcam image I
-  ├─> perception/lane_detector.py   UFLD-v2 (ResNet-34, CULane)  -> lane boundaries
-  └─> perception/sign_detector.py   YOLOv8n (fine-tuned TT100K) -> traffic signs
-          │
-          v
-  analysis/scene_builder.py         geometric rules, no learned parameters (Φ)
-  analysis/lane_analyzer.py         ego lane, vehicle offset, curvature, lane count
-  analysis/road_type.py             road shape / curve direction
-          │
-          v
-  <image>.json        full TrafficScene
-  analysis/scene_summarizer.py -> <image>_brief.json   = SSI sent to the VLM
-          │
-          v
-  llm_batch_client.py               VLM via NVIDIA NIM, 3 input modes:
-                                      image_only (c1) | json_only (c2, SSI-only) | image_json (c3, Combined)
-          │
-          v
-  score_output_by_{gemini,gpt,deepseek}.py   LLM-as-a-Judge, 6 criteria, 1–5 scale
+                    ┌──────────────── SSI extraction module ────────────────┐
+Dashcam image I ──> │ Detection:          UFLD-v2  -> lane boundaries        │
+                    │                     YOLOv8n  -> traffic signs          │
+                    │ Semantic represent.: geometric rules (Φ) -> SSI (JSON) │
+                    └───────────────────────────┬───────────────────────────┘
+                                                v
+                    ┌──────── Recommendation generation module ─────────────┐
+                    │ VLM (pretrained, via API), 3 input modes:              │
+                    │   c1 Image-only | c2 SSI-only | c3 Combined (image+SSI)│
+                    │ Output: Situation / Recommendation / Safety note       │
+                    └───────────────────────────┬───────────────────────────┘
+                                                v
+                    Evaluation: LLM-as-a-Judge (6 criteria, 1–5 scale),
+                                checked against human ratings
 ```
 
-| File | Role |
-|---|---|
-| [`pipeline.py`](src-v2/pipeline.py) | `TrafficScenePipeline`: runs lane and sign detection on the same image, then builds the scene |
-| [`main.py`](src-v2/main.py) | CLI for a single image (`--image`, `--culane`, `--demo`, `--self-test`) |
-| [`batch_process.py`](src-v2/batch_process.py) | Runs the pipeline on a folder and writes `<img>.json`, `<img>_brief.json`, `<img>_vis.jpg` |
-| [`generate_briefs.py`](src-v2/generate_briefs.py) | Rebuilds `_brief.json` from existing raw JSON without rerunning the models |
-| [`reasoning/prompt_builder.py`](src-v2/reasoning/prompt_builder.py) | Builds prompts from a `TrafficScene` |
-| [`configs/config.yaml`](src-v2/configs/config.yaml) | Model paths, sign confidence threshold (0.5), CULane root |
-| [`configs/traffic_sign_mapping.json`](src-v2/configs/traffic_sign_mapping.json) | Maps TT100K classes to sign types |
+Design assumptions (§3.1):
+- Each image is processed on its own, with no temporal information.
+- The camera is mounted at the horizontal center of the vehicle.
+- There is no explicit depth estimation.
+- The local modules run on a CPU.
+- The VLM is used through an API and is not fine-tuned.
 
 ---
 
-## 2. Setup
+## 2. SSI extraction module
+
+### 2.1 Detection (§3.3)
+
+| Model | Role | Code |
+|---|---|---|
+| UFLD-v2 (ResNet-34, CULane checkpoint) | Lane detection | [`perception/lane_detector.py`](src-v2/perception/lane_detector.py) |
+| YOLOv8n fine-tuned on TT100K | Traffic sign detection, confidence ≥ 0.5 | [`perception/sign_detector.py`](src-v2/perception/sign_detector.py) |
+
+The two detectors process the same image in one call ([`pipeline.py`](src-v2/pipeline.py)).
+
+### 2.2 Semantic representation (§3.4)
+
+This step uses explicit geometric rules and has no learnable parameters.
+
+**Lane semantics** ([`analysis/lane_analyzer.py`](src-v2/analysis/lane_analyzer.py), [`analysis/road_type.py`](src-v2/analysis/road_type.py)):
+1. Sort the lane boundaries by their actual position.
+2. Determine the ego lane at the reference row ρ = 0.919.
+3. Compute the vehicle offset (direction, magnitude, percentage).
+4. Estimate the curvature.
+5. Classify the road shape (straight / gentle curve / sharp curve) and the curve direction.
+6. Count the lanes and the neighboring lanes on each side.
+
+**Traffic sign semantics** ([`perception/sign_detector.py`](src-v2/perception/sign_detector.py), [`configs/traffic_sign_mapping.json`](src-v2/configs/traffic_sign_mapping.json)):
+1. Filter the detections.
+2. Map each class code to `sign_name` and `sign_type`.
+3. Assign the relative position (left / center / right) from the center of the bounding box.
+
+**SSI construction** ([`analysis/scene_builder.py`](src-v2/analysis/scene_builder.py), [`analysis/scene_summarizer.py`](src-v2/analysis/scene_summarizer.py)): the lane and sign semantics are combined into one JSON per image, `<image>_brief.json`. It contains the lane count, ego lane, vehicle offset, neighboring lanes, road shape and traffic signs.
+
+Run the module on a folder of images:
+
+```bash
+python batch_process.py --input <image_dir> --output <ssi_dir>
+```
+
+---
+
+## 3. Recommendation generation module (§3.5)
+
+[`llm_batch_client.py`](src-v2/llm_batch_client.py) sends one request per image and per mode to the VLM through NVIDIA NIM.
+
+The prompt for each mode is `P_m = P_common ⊕ B_m ⊕ P_out`:
+- `P_common` holds the role, the task, the rules for using evidence, and hallucination control.
+- `B_m` is the mode-specific block.
+- `P_out` is the output format.
+
+`P_common` and `P_out` are the same in all three modes. When SSI is used, it is inserted into the prompt as raw JSON.
+
+| Mode | `--mode` | VLM input |
+|---|---|---|
+| c1 Image-only | `image_only` | Image |
+| c2 SSI-only | `json_only` | SSI |
+| c3 Combined | `image_json` | Image + SSI |
+
+The generation settings are the same for every request: `max_tokens=400`, `temperature=0.2`, `top_p=0.7`, `frequency_penalty=0.4`, and a 120 s timeout. Images are compressed to ≤ 150 KB before Base64 encoding.
+
+```bash
+python llm_batch_client.py --mode image_only --image-dir <image_dir>                      --output-dir <out_dir>
+python llm_batch_client.py --mode json_only                          --json-dir <ssi_dir> --output-dir <out_dir>
+python llm_batch_client.py --mode image_json --image-dir <image_dir> --json-dir <ssi_dir> --output-dir <out_dir>
+```
+
+---
+
+## 4. Evaluation method (§3.6)
+
+**Controlled comparison design:**
+- Independent variable: the input mode.
+- Dependent variables: the 6 criterion scores and the aggregate score.
+- Unit of analysis: one image. The three modes of the same image form one set of paired observations.
+
+**Rubric:** six criteria, each scored 1–5:
+- Situation understanding
+- Road geometry understanding
+- Ego-lane position
+- Signs and rules
+- Driving recommendation
+- Safety considerations
+
+**LLM-as-a-Judge:** in one call per image, the judge receives the image, the recommendations to compare and the rubric. Scores are compared only within the same scoring session. The rubric is defined in [`score_output_by_gemini.py`](src-v2/score_output_by_gemini.py) and shared by all judges.
+
+| Judge | Model | Script |
+|---|---|---|
+| Gemini (primary) | `gemini-3.5-flash` | `score_output_by_gemini.py` |
+| GPT-5 Mini | `gpt-5-mini` | `score_output_by_gpt.py` |
+| DeepSeek | `deepseek-v4-flash-vision-exp` | `score_output_by_deepseek.py` |
+
+**Statistics:**
+- Δ = S(Combined) − S(Image-only).
+- Each pair of modes is compared with the two-sided Wilcoxon signed-rank test, using a Bonferroni correction.
+- The effect size is Cohen's d_z.
+
+---
+
+## 5. Experiments (Thesis Ch. 4)
+
+### 5.1 Data (§4.1.2)
+
+| Dataset | Folder | Ground truth | Purpose |
+|---|---|---|---|
+| TT100K (85/15 split) | external | — | Fine-tuning YOLOv8n |
+| CULane, 200 images (Normal / Hard) | `input/` | `image_labels.xlsx` | Main evaluation |
+| Self-collected dashcam, 200 images | `input_real_life/` | `new_image_labels.xlsx` | Evaluation outside CULane |
+
+The self-collected images are frames taken from dashcam video with [`get_image_from_video.py`](src-v2/get_image_from_video.py).
+
+### 5.2 Mapping from thesis sections to code
+
+| Section | Experiment | Code |
+|---|---|---|
+| 4.2.1 | Lane semantic extraction: lane count, ego lane, road shape | SSI (`batch_process.py`) compared with the hand-labelled ground truth; `evaluate_real_life.py` |
+| 4.2.2 | Traffic sign detection: Precision, Recall, F1, classification accuracy | YOLOv8n output reviewed by eye; `evaluate_real_life.py` |
+| 4.2.3 | SSI field quality | Ground truth from 4.2.1 and 4.2.2 |
+| 4.2.4 | CPU cost of the SSI extraction module | `benchmark_cpu_latency.py`, `benchmark_yolov8n_predict.py`, `benchmark_yolo_variants_real_life.py` |
+| 4.3.1 | Screening of candidate VLMs (Combined mode, Gemini judge) | `llm_batch_client.py --model <model>`, `evaluate_model_comparison_full.py` |
+| 4.3.2 | Role of SSI: 3 modes × 3 judges | `evaluate_mode_comparison_v5.py`, `evaluate_mode_comparison_v5_gpt.py`, `evaluate_mode_comparison_v5_deepseek.py` |
+| 4.3.3 | Effect of SSI accuracy on recommendation quality | `analyze_ssi_error_impact.py` |
+| 4.4 | LLM-as-a-Judge vs human ratings (20 images, Combined mode) | `evaluate_human_agreement.py`, `evaluate_model_comparison_gpt.py`, `evaluate_model_comparison_deepseek.py` |
+| 4.5.1 | Can the VLM extract lane semantics by itself? | `llm_lane_perception.py`, `evaluate_llm_lane_perception.py` |
+| 4.5.2 | Influence of the prompt (v1 / v2 / v3) | `evaluate_prompt_ablation.py`, `analyze_prompt_ablation_stats.py` |
+
+The prompt versions in §4.5.2 correspond to these files:
+- v1 is [`prompt_p1_minimal.txt`](src-v2/prompt_p1_minimal.txt).
+- v2 is [`prompt_p2_minimal_structured.txt`](src-v2/prompt_p2_minimal_structured.txt).
+- v3 is the main prompt, `DEFAULT_PROMPTS` in `llm_batch_client.py`.
+
+Judge scores are saved in `src-v2/evaluation_results/`.
+
+---
+
+## 6. Setup
 
 ```bash
 pip install -r src-v2/requirements.txt
-pip install pandas openpyxl scipy google-generativeai openai   # needed by the evaluation scripts
+pip install pandas openpyxl scipy google-generativeai openai
 ```
 
-- **UFLD-v2**: clone [Ultra-Fast-Lane-Detection-v2](https://github.com/cfzd/Ultra-Fast-Lane-Detection-v2) and download `culane_res34.pth`.
-- **YOLOv8n TT100K**: the checkpoint `yolov8n_tt100k_best.pt`, fine-tuned on a Kaggle GPU (640×640, batch 83, SGD, up to 100 epochs, patience 30).
-- Set `lane_model_path`, `ufld_repo_path` and `sign_model_path` in `configs/config.yaml`.
-- **API keys** (environment variables): `NVIDIA_API_KEY` for the VLM, `GEMINI_API_KEY`, `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` for the judges.
-
----
-
-## 3. Data (Thesis §4.1.2)
-
-| Dataset | Folder | Purpose |
-|---|---|---|
-| TT100K | (external) | Fine-tuning YOLOv8n, 85/15 train/val split |
-| CULane, 200 images (176 Normal / 24 Hard) | `input/` | Main evaluation of SSI and the VLM experiments |
-| Self-collected dashcam images, 200 images | `input_real_life/` | Evaluation on data outside CULane |
-
-Hand-labelled ground truth:
-- `image_labels.xlsx` for CULane.
-- `new_image_labels.xlsx` for the self-collected set.
-- `human_agreement_sample.xlsx` for the 20 images rated by a human.
-
-**Building the self-collected set:** [`get_image_from_video.py`](src-v2/get_image_from_video.py) extracts up to 200 frames from a dashcam video at random intervals. Set `VIDEO_PATH` and `OUTPUT_DIR` at the bottom of the file first.
-
-```bash
-python get_image_from_video.py
-```
-
----
-
-## 4. Experiment workflow (Thesis Ch. 4)
-
-### Step 1: Extract SSI (input to every later experiment)
-
-```bash
-python batch_process.py --input input            --output output-v3          # CULane
-python batch_process.py --input input_real_life  --output output_real_life   # self-collected
-```
-
-### Step 2: Evaluate the SSI extraction module (§4.2)
-
-| Section | Content | Script / source |
-|---|---|---|
-| 4.2.1 | Lane semantics on CULane: lane count Acc/MAE/Precision, ego lane, road shape (Normal/Hard) | `output-v3/*_brief.json` compared with `image_labels.xlsx` (also used by `evaluate_llm_lane_perception.py`, `evaluate_road_condition.py`) |
-| 4.2.1 | Lane semantics on the self-collected set | `python evaluate_real_life.py` |
-| 4.2.2 | YOLOv8n training results on the TT100K validation set (Precision/Recall/mAP50/mAP50-95) | Computed automatically by Ultralytics during fine-tuning on Kaggle (the fine-tuning script is not in this repo) |
-| 4.2.2 | Traffic signs on CULane and the self-collected set, at confidence 0.5: Precision/Recall/F1/Classification Acc | Visual review of `sign_crops_culane/`, `sign_crops/`, `culane_recall_check/`, `sign_type_labeling_worksheet*.xlsx`. On the self-collected set: `evaluate_real_life.py` |
-| 4.2.3 | SSI field quality | Same ground truth as 4.2.1 and 4.2.2 |
-| 4.2.4 | CPU latency (lane / sign / semantic step, batch 1) on 200 CULane and 200 self-collected images | `python benchmark_cpu_latency.py`<br>`python benchmark_yolov8n_predict.py`<br>`python benchmark_yolo_variants_real_life.py` → `evaluation_results/cpu_latency/` |
-
-The ego-lane reference row is set to ρ = 0.919 (`vehicle_position_y_ratio` in `analysis/lane_analyzer.py`). This value is the share of the CULane image that is still visible above the hood.
-
-### Step 3: Generate recommendations with the VLM (§3.5)
-
-The API settings are the same for every request: `max_tokens=400`, `temperature=0.2`, `top_p=0.7`, `frequency_penalty=0.4`, and a 120 s timeout. The default model is `nvidia/ising-calibration-1.5-31b`.
-
-```bash
-python llm_batch_client.py --mode image_only --image-dir input                          --output-dir output-suggest-image-only-prompt-v5-31b
-python llm_batch_client.py --mode json_only                     --json-dir output-v3    --output-dir output-suggest-json-only-prompt-v5-31b
-python llm_batch_client.py --mode image_json --image-dir input  --json-dir output-v3    --output-dir output-suggest-image-json-prompt-v5-31b
-```
-
-`json_only` and `image_json` send `<img>_brief.json` (the SSI) to the VLM. The prompts are hard-coded in `DEFAULT_PROMPTS`, and the full text is in the thesis appendix.
-
-### Step 4: Evaluate recommendation quality (§4.3)
-
-| Section | Content | Script → result |
-|---|---|---|
-| 4.3.1 | Screening of 3 candidate VLMs (`ising-calibration-31b`, `nemotron-nano-vl-8b`, `nemotron-nano-12b-v2-vl`) on 200 CULane images, Combined mode, Gemini judge | Generate the outputs with `llm_batch_client.py --mode image_json --model <model>`. Then run `python evaluate_model_comparison_full.py` → `evaluation_results/model_comparison_full/`. `nemotron-nano-12b-v2-vl` returned only 34/200 responses (166 HTTP 500 errors), so it is left out of the quality comparison. |
-| 4.3.2 | 3 input modes (`ising-calibration-31b`, 200 CULane images) × 3 judges | Gemini: `evaluate_mode_comparison_v5.py` → `session_3_ising31b/`<br>GPT-5 Mini: `evaluate_mode_comparison_v5_gpt.py` → `mode_comparison_gpt/`<br>DeepSeek: `evaluate_mode_comparison_v5_deepseek.py` → `mode_comparison_deepseek/` |
-| 4.3.3 | Effect of SSI accuracy: images are split by whether the SSI ego lane is correct (172 correct / 28 incorrect). Wilcoxon tests Δ within each group; Mann–Whitney U compares the two groups. | `python analyze_ssi_error_impact.py` → `evaluation_results/ssi_error_impact/` (reads existing results, no API calls) |
-
-**Statistical tests for §4.3.2.** These scripts only produce the per-image scores. The tests are run on those scores:
-- For each image, the aggregate score is the mean of the 6 criteria, and Δ = Combined − Image-only.
-- The pairs (c1,c2), (c1,c3) and (c2,c3) are tested per judge with the two-sided Wilcoxon signed-rank test. The Bonferroni threshold is 0.05/9 = 0.0056.
-- The effect size is Cohen's d_z = mean(d) / sd(d).
-
-**Judges.** All three judges use the same rubric. It is defined in `score_output_by_gemini.py` and imported by the GPT and DeepSeek scripts.
-
-| Judge | Model | Settings |
-|---|---|---|
-| Gemini | `gemini-3.5-flash` | temperature 0.1, up to 8192 tokens |
-| GPT-5 Mini | `gpt-5-mini` | up to 4096 tokens, API default temperature |
-| DeepSeek | `deepseek-v4-flash-vision-exp` | temperature 0.1, up to 8192 tokens |
-
-Each judge retries up to 5 times. In one call, it scores the outputs of all three modes for the same image, so scores are compared only within the same scoring session. Before running DeepSeek, check that the model accepts images with `python score_output_by_deepseek.py --test-only`.
-
-### Step 5: Compare LLM-as-a-Judge with human ratings (§4.4)
-
-This uses 20 images in Combined mode, which gives 120 score pairs per judge.
-
-```bash
-python evaluate_human_agreement.py              # Gemini vs human
-python score_output_by_gpt.py        && python evaluate_model_comparison_gpt.py       # GPT-5 Mini
-python score_output_by_deepseek.py   && python evaluate_model_comparison_deepseek.py  # DeepSeek
-```
-
-### Step 6: Supplementary experiments (§4.5)
-
-**4.5.1: Can the VLM extract the semantics by itself?** The VLM receives only the image and returns JSON in the SSI schema. The result is compared with the UFLD-v2 pipeline and the ground truth.
-
-```bash
-python llm_lane_perception.py --input-dir input --output-dir output-llm-lane-perception
-python evaluate_llm_lane_perception.py
-python evaluate_llm_lane_perception.py --labels new_image_labels.xlsx \
-    --pipeline-dir output_real_life --llm-dir output-llm-lane-perception-real-life
-```
-
-**4.5.2: Effect of the prompt.** Three prompt versions are compared. The model (`ising-calibration-31b`), the Combined mode and the 200 CULane images stay the same. The thesis names map to the code as follows:
-
-| Thesis | Code | Content |
-|---|---|---|
-| Prompt v1 | `p1_minimal` ([prompt_p1_minimal.txt](src-v2/prompt_p1_minimal.txt)) | Asks only for a recommendation from the image and the SSI |
-| Prompt v2 | `p2_minimal_structured` ([prompt_p2_minimal_structured.txt](src-v2/prompt_p2_minimal_structured.txt)) | v1 plus the 3-part output structure |
-| Prompt v3 | `current` (`DEFAULT_PROMPTS` in `llm_batch_client.py`) | v2 plus rules on evidence, inference, and conflicts between the image and the SSI |
-
-Gemini scores all three versions together in one call per image, in a separate scoring session (`evaluation_results/session_prompt_ablation/`).
-
-```bash
-python evaluate_prompt_ablation.py        # generate + score the three versions in one call
-python analyze_prompt_ablation_stats.py   # Wilcoxon signed-rank for each pair of versions
-```
-
-The script also prints a paired t-test and Cohen's d as a cross-check. The thesis reports Wilcoxon with a Bonferroni threshold of 0.05/3 = 0.0167, which you compare against the p-values yourself.
-
----
-
-## 5. Where the results are
-
-- `evaluation_results/`: judge scores for each experiment, one JSON file per image, plus `_final_summary.json`. [`evaluation_results/README_NGUON_DU_LIEU.md`](src-v2/evaluation_results/README_NGUON_DU_LIEU.md) maps each thesis table to the folder and script it comes from.
-- `output-v3/`, `output_real_life/`: SSI for CULane and for the self-collected set.
-- `output-suggest-*/`: VLM recommendations (`.txt`) for each mode and prompt version.
-- `figures/`: figures used in the thesis.
+- Clone [Ultra-Fast-Lane-Detection-v2](https://github.com/cfzd/Ultra-Fast-Lane-Detection-v2) and download `culane_res34.pth`. You also need the YOLOv8n checkpoint fine-tuned on TT100K.
+- Set the model paths in [`configs/config.yaml`](src-v2/configs/config.yaml).
+- Set these environment variables: `NVIDIA_API_KEY` (VLM), `GEMINI_API_KEY`, `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` (judges).
