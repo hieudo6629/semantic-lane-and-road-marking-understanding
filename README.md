@@ -1,4 +1,4 @@
-# Semantic Lane and Traffic Sign Understanding for Driving Recommendations
+# Semantic Lane and Traffic Sign Understanding Using Vision-Language Models for Driving Decision Support
 
 This repository contains the code for the thesis. The pipeline takes a dashcam image and produces **Structured Semantic Information (SSI)**, a JSON description of the lanes and traffic signs. A Vision-Language Model (VLM) then uses the SSI to generate driving recommendations. The recommendations are scored with **LLM-as-a-Judge**, and the judge scores are checked against human ratings.
 
