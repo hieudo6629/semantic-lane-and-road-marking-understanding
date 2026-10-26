@@ -41,8 +41,6 @@ model/
 *.onnx
 
 # ===== LaTeX, PDF and build files =====
-*.tex
-*.pdf
 *.bib
 *.aux
 *.bbl
